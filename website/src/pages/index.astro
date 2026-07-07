@@ -1,0 +1,295 @@
+---
+const metrics = [
+  ['Import', 'CSV, XLSX, Sheets'],
+  ['Validate', 'Entrance, days, meals, drinks'],
+  ['Export', 'Audit-ready CSV']
+]
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Festival - Local-first ticket scanner</title>
+    <meta name="description" content="Simple Festival turns a spreadsheet into a local-first QR scanner for entrance, day passes, food, drinks, and custom festival checks." />
+    <meta property="og:title" content="Simple Festival" />
+    <meta property="og:description" content="A local-first scanner for festival teams." />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <main>
+      <section class="hero" aria-labelledby="title">
+        <div class="hero__copy">
+          <p class="eyebrow">Festival operations</p>
+          <h1 id="title">Simple Festival</h1>
+          <p class="lead">
+            Import a ticket sheet, scan QR codes on mobile, sync another device when the network is available, and export the event audit when doors close.
+          </p>
+          <div class="actions">
+            <a href="mailto:contact@digitalshiftou.com?subject=Simple%20Festival">Request access</a>
+            <a class="secondary" href="#workflow">View workflow</a>
+          </div>
+        </div>
+        <div class="product-shot" aria-label="Simple Festival app preview">
+          <img src="/icon.svg" alt="Simple Festival app icon" />
+          <div>
+            <span>QR</span>
+            <strong>Entrance ready</strong>
+            <small>Local scan log active</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Simple Festival capabilities">
+        {metrics.map(([label, value]) => (
+          <div>
+            <small>{label}</small>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </section>
+
+      <section id="workflow" class="workflow" aria-labelledby="workflow-title">
+        <div>
+          <p class="eyebrow">Workflow</p>
+          <h2 id="workflow-title">Built for check-in tables, bars, and meal lines.</h2>
+        </div>
+        <div class="steps">
+          <article>
+            <span>01</span>
+            <h3>Import the sheet</h3>
+            <p>Use CSV, XLSX, or a public Google Sheet export. The app detects ticket, name, paid status, and entitlement columns.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Scan by mode</h3>
+            <p>Switch between entrance, day pass, meal, drink token, and custom modes without changing the original spreadsheet.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Export the audit</h3>
+            <p>Download an enriched CSV with local scan columns and consumed counts ready for the next event handoff.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer>Digital Shift OU</footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #161f2f;
+    --muted: #667085;
+    --line: #d9e2ec;
+    --paper: #f6f8fb;
+    --panel: #ffffff;
+    --accent: #2364aa;
+    --accent-strong: #163d67;
+    --lime: #b7d968;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .hero,
+  .metrics,
+  .workflow,
+  footer {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+  }
+
+  .hero {
+    min-height: 86vh;
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(320px, 0.78fr);
+    gap: clamp(32px, 7vw, 92px);
+    align-items: center;
+    padding: 56px 0 30px;
+  }
+
+  .eyebrow {
+    margin: 0 0 12px;
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    font-size: clamp(3.3rem, 9vw, 7.6rem);
+    line-height: 0.9;
+    font-weight: 900;
+  }
+
+  h2 {
+    margin-bottom: 0;
+    font-size: clamp(2rem, 4vw, 4rem);
+    line-height: 1;
+  }
+
+  .lead {
+    max-width: 620px;
+    color: var(--muted);
+    font-size: clamp(1.08rem, 2vw, 1.32rem);
+    line-height: 1.55;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 18px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .secondary {
+    background: transparent;
+    color: var(--accent-strong);
+  }
+
+  .product-shot {
+    aspect-ratio: 0.74;
+    display: grid;
+    place-items: center;
+    gap: 24px;
+    padding: 34px;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    background: #0f172a;
+    color: white;
+    box-shadow: 0 24px 80px rgba(22, 31, 47, 0.2);
+  }
+
+  .product-shot img {
+    width: min(180px, 42vw);
+    aspect-ratio: 1;
+    object-fit: contain;
+  }
+
+  .product-shot div {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .product-shot span {
+    color: var(--lime);
+    font-weight: 900;
+  }
+
+  .product-shot strong {
+    font-size: 1.35rem;
+  }
+
+  .product-shot small {
+    color: #bcc7d9;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    padding: 0 0 68px;
+  }
+
+  .metrics div,
+  article {
+    border-top: 3px solid var(--accent);
+    padding-top: 18px;
+  }
+
+  .metrics small,
+  article span {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .metrics strong {
+    display: block;
+    font-size: clamp(1.2rem, 3vw, 2rem);
+  }
+
+  .workflow {
+    display: grid;
+    grid-template-columns: 0.78fr 1.22fr;
+    gap: 34px;
+    padding: 80px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  article p {
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  footer {
+    padding: 26px 0 38px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+  }
+
+  @media (max-width: 860px) {
+    .hero,
+    .workflow,
+    .metrics,
+    .steps {
+      grid-template-columns: 1fr;
+    }
+
+    .hero {
+      min-height: auto;
+      padding-top: 42px;
+    }
+
+    .product-shot {
+      aspect-ratio: auto;
+      min-height: 420px;
+    }
+  }
+</style>

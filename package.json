@@ -1,0 +1,61 @@
+{
+  "name": "simple-festival",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "website"
+  ],
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc --noEmit && vite build && bunx cap copy",
+    "lint": "vue-tsc --noEmit",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "store:screenshots": "bun scripts/generate-store-screenshots.ts",
+    "cap:sync": "bunx cap sync",
+    "website:dev": "bun --cwd website dev",
+    "website:build": "bun --cwd website build",
+    "website:preview": "bun --cwd website preview",
+    "build:all": "bun run build && bun run website:build",
+    "worker:dev": "bunx wrangler@latest dev",
+    "worker:deploy": "bunx wrangler@latest deploy",
+    "worker:types": "bunx wrangler@latest types worker/src/worker-configuration.d.ts"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/haptics": "latest",
+    "@capgo/camera-preview": "latest",
+    "@capgo/capacitor-updater": "latest",
+    "@ionic/vue": "latest",
+    "@ionic/vue-router": "latest",
+    "papaparse": "latest",
+    "qrcode": "latest",
+    "vue": "latest",
+    "vue-router": "latest",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/ios": "latest",
+    "@astrojs/check": "latest",
+    "@eslint/js": "latest",
+    "@types/node": "latest",
+    "@types/papaparse": "latest",
+    "@types/qrcode": "latest",
+    "@vitejs/plugin-vue": "latest",
+    "@vue/compiler-sfc": "latest",
+    "eslint": "latest",
+    "globals": "latest",
+    "jsdom": "latest",
+    "playwright": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "vue-tsc": "latest",
+    "wrangler": "latest"
+  }
+}
