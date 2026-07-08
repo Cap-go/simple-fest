@@ -1,5 +1,5 @@
 {
-  "name": "simple-festival",
+  "name": "Ezfest",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "store:screenshots": "bun scripts/generate-store-screenshots.ts",
     "cap:sync": "bunx cap sync",
+    "cap:ios": "bun run build && bun run cap:sync && bun cap open ios",
     "website:dev": "bun --cwd website dev",
     "website:build": "bun --cwd website build",
     "website:preview": "bun --cwd website preview",
@@ -37,10 +38,11 @@
     "xlsx": "latest"
   },
   "devDependencies": {
+    "@astrojs/check": "latest",
     "@capacitor/android": "latest",
     "@capacitor/cli": "latest",
     "@capacitor/ios": "latest",
-    "@astrojs/check": "latest",
+    "@capgo/vite-capacitor": "^0.1.1",
     "@eslint/js": "latest",
     "@types/node": "latest",
     "@types/papaparse": "latest",

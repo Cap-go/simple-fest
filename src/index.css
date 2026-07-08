@@ -1,10 +1,35 @@
 html {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  overflow-x: clip;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
   background: #f5f7fb;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Ionic structure.css fixes the body (position: fixed; overflow: hidden) and
+   expects scrolling inside ion-content; this app scrolls the page itself. */
 body {
+  position: static;
+  width: 100%;
   min-height: 100vh;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
   margin: 0;
+  overflow: auto;
+  overflow-x: clip;
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
 }
 
 button,
@@ -12,8 +37,13 @@ input,
 select,
 textarea {
   font: inherit;
+  touch-action: manipulation;
 }
 
 #app {
+  width: 100%;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
+  touch-action: manipulation;
 }

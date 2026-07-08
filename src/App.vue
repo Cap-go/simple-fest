@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { toDataURL } from 'qrcode'
 import { exportDatabaseCsv, importExample, importFile, importSheetUrl } from './domain/fileImport'
 import { clearDatabase, getDeviceId, loadAiSettings, loadDatabase, saveAiSettings, saveDatabase } from './domain/localStore'
@@ -15,7 +15,7 @@ const emptySyncStatus: SyncStatus = { mode: 'off', peers: 0, message: 'Sync off'
 const deviceId = getDeviceId()
 const db = ref<FestivalDb | null>(loadDatabase())
 const settings = ref<AiSettings>(loadAiSettings())
-const festivalName = ref(db.value?.name ?? 'Simple Festival')
+const festivalName = ref(db.value?.name ?? 'Ezfest')
 const sheetUrl = ref('')
 const selectedFile = ref<File | null>(null)
 const busy = ref(false)
@@ -29,6 +29,7 @@ const syncInvite = ref<SyncInvite | null>(null)
 const syncInviteText = ref('')
 const syncQr = ref<string | null>(null)
 const joinText = ref('')
+const scanViewportActiveClass = 'scan-viewport-active'
 
 const stats = computed(() => (db.value ? serviceStats(db.value) : []))
 const activeService = computed(() => db.value?.schema.services.find((service) => service.id === activeServiceId.value) ?? db.value?.schema.services[0])
@@ -36,6 +37,16 @@ const activeServiceStat = computed(() => (activeService.value ? stats.value.find
 const recentEvents = computed(() => [...(db.value?.events ?? [])].reverse().slice(0, 8))
 const scanEnabled = computed(() => cameraMode.value !== null)
 const scanner = useCapgoQrScanner(scanEnabled, onScannedValue)
+const scanInstruction = computed(() => {
+  const serviceLabel = activeService.value?.label.trim().toLowerCase() || 'entrance'
+  return `Scan ${serviceLabel} ticket`
+})
+
+watch(
+  () => cameraMode.value !== null,
+  (isActive) => setScanViewportLock(isActive),
+  { immediate: true },
+)
 
 const sync = new SyncController({
   getDatabase: () => db.value,
@@ -54,7 +65,10 @@ const sync = new SyncController({
   },
 })
 
-onBeforeUnmount(() => sync.close())
+onBeforeUnmount(() => {
+  sync.close()
+  setScanViewportLock(false)
+})
 
 function setAndSaveDb(nextDb: FestivalDb | null) {
   db.value = nextDb
@@ -216,6 +230,11 @@ function compactScannerError(error?: string | null) {
   return error
 }
 
+function setScanViewportLock(isActive: boolean) {
+  document.documentElement.classList.toggle(scanViewportActiveClass, isActive)
+  document.body?.classList.toggle(scanViewportActiveClass, isActive)
+}
+
 function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
   if (!current || current.id !== remote.id) {
     return remote
@@ -232,33 +251,31 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
 </script>
 
 <template>
-  <main v-if="db && cameraMode === 'scan'" class="app-shell scan-session">
+  <main v-if="cameraMode === 'join' || (db && cameraMode === 'scan')" class="app-shell scan-session camera-active">
     <header class="scan-topbar">
       <button class="icon-button" type="button" aria-label="Back to dashboard" @click="cameraMode = null">
         Back
       </button>
-      <div class="scan-title">
-        <p>Simple Festival</p>
-        <h1>{{ activeService?.label ?? 'Scan session' }}</h1>
-      </div>
-      <div :class="['sync-pill', syncStatus.mode]">
-        <span>{{ syncStatus.message }}</span>
-        <strong v-if="syncStatus.peers > 0">{{ syncStatus.peers }}</strong>
-      </div>
     </header>
 
-    <section class="scan-camera" aria-label="Ticket scanner">
+    <section class="scan-camera" :aria-label="cameraMode === 'join' ? 'Invite scanner' : 'Ticket scanner'">
       <div id="camera-preview" />
-      <div class="scan-frame">
-        <span>{{ scanner.active.value ? 'Live' : 'Starting' }}</span>
-      </div>
+      <div class="scan-frame" aria-hidden="true" />
     </section>
 
     <aside class="status-dock" aria-live="polite">
-      <div :class="['scan-result-strip', lastResult?.status ?? 'idle']">
+      <div v-if="cameraMode === 'join'" class="scan-result-strip idle">
         <div>
-          <strong>{{ statusLabel(lastResult) }}</strong>
-          <span>{{ lastResult?.detail ?? compactScannerError(scanner.error.value) ?? `Scan ${activeService?.label ?? 'selected mode'} tickets.` }}</span>
+          <strong>Scan invite</strong>
+          <span>{{ compactScannerError(scanner.error.value) ?? 'Point the camera at the host invite QR.' }}</span>
+        </div>
+      </div>
+      <div v-else :class="['scan-result-strip', lastResult?.status ?? 'idle']">
+        <div>
+          <strong>{{ lastResult ? statusLabel(lastResult) : scanInstruction }}</strong>
+          <span v-if="lastResult?.detail || compactScannerError(scanner.error.value)">
+            {{ lastResult?.detail ?? compactScannerError(scanner.error.value) }}
+          </span>
         </div>
         <b>{{ activeServiceStat?.scanned ?? 0 }}/{{ activeServiceStat?.eligible ?? 0 }}</b>
       </div>
@@ -269,7 +286,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
     <section class="topbar">
       <div>
         <p class="eyebrow">Local-first event scanner</p>
-        <h1>{{ db?.name ?? 'Simple Festival' }}</h1>
+        <h1>{{ db?.name ?? 'Ezfest' }}</h1>
       </div>
       <div :class="['sync-pill', syncStatus.mode]">
         <span>{{ syncStatus.message }}</span>
@@ -288,7 +305,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
 
         <label>
           Festival name
-          <input v-model="festivalName" placeholder="Simple Festival 2026" />
+          <input v-model="festivalName" placeholder="Ezfest 2026" />
         </label>
 
         <label>
@@ -328,9 +345,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
           <textarea v-model="joinText" placeholder="Paste sync invite from host device" />
           <div class="button-row">
             <button class="secondary" :disabled="!joinText.trim()" @click="void joinFromText(joinText)">Join code</button>
-            <button class="secondary" @click="cameraMode = cameraMode === 'join' ? null : 'join'">
-              {{ cameraMode === 'join' ? 'Stop scan' : 'Scan invite' }}
-            </button>
+            <button class="secondary" @click="cameraMode = 'join'">Scan invite</button>
           </div>
         </section>
       </aside>
@@ -432,7 +447,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
               <textarea v-model="joinText" placeholder="Paste invite code from another device" />
               <div class="button-row">
                 <button class="secondary" :disabled="!joinText.trim()" @click="void joinFromText(joinText)">Join code</button>
-                <button class="secondary" @click="cameraMode = cameraMode === 'join' ? null : 'join'">Scan invite</button>
+                <button class="secondary" @click="cameraMode = 'join'">Scan invite</button>
               </div>
             </div>
             <div class="invite-box">
@@ -460,18 +475,8 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
         </section>
 
         <section v-if="!db" class="empty-state">
-          <div v-if="cameraMode === 'join'" class="join-scan">
-            <div class="scanner-stage join-stage">
-              <div id="camera-preview" />
-              <span>Invite QR</span>
-            </div>
-            <h2>Scan a host invite QR.</h2>
-            <p>{{ compactScannerError(scanner.error.value) ?? 'Or paste the invite code in the join panel.' }}</p>
-          </div>
-          <template v-else>
-            <h2>Import a festival sheet or join a host device.</h2>
-            <p>CSV, XLSX, public Google Sheet exports, and local device sync are supported.</p>
-          </template>
+          <h2>Import a festival sheet or join a host device.</h2>
+          <p>CSV, XLSX, public Google Sheet exports, and local device sync are supported.</p>
         </section>
       </section>
     </section>
@@ -493,13 +498,40 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
   --bad: #bc2f2f;
 }
 
+:global(html.scan-viewport-active),
+:global(html.camera-preview-active) {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  background: transparent !important;
+}
+
+:global(html.scan-viewport-active body),
+:global(html.scan-viewport-active body #app),
+:global(html.camera-preview-active body),
+:global(html.camera-preview-active body #app) {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-width: 100%;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  background: transparent !important;
+}
+
 * {
   box-sizing: border-box;
 }
 
 .app-shell {
+  width: 100%;
   min-height: 100vh;
-  padding: 24px;
+  max-width: 100%;
+  overflow-x: clip;
+  padding: clamp(14px, 4vw, 24px);
   color: var(--ink);
   background: var(--surface-soft);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -508,6 +540,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
 .topbar,
 .scan-topbar {
   width: min(1240px, 100%);
+  max-width: 100%;
   margin: 0 auto 18px;
   display: flex;
   align-items: center;
@@ -534,6 +567,7 @@ h1 {
   margin-bottom: 0;
   font-size: clamp(2.5rem, 6vw, 5rem);
   line-height: 0.96;
+  overflow-wrap: anywhere;
 }
 
 h2 {
@@ -548,6 +582,7 @@ p {
 
 button,
 .actions a {
+  max-width: 100%;
   min-height: 42px;
   border: 1px solid var(--accent);
   border-radius: 8px;
@@ -583,6 +618,7 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -601,6 +637,7 @@ button:disabled {
 
 .notice {
   width: min(1240px, 100%);
+  max-width: 100%;
   margin: 0 auto 18px;
   padding: 12px 14px;
   border: 1px solid rgba(35, 100, 170, 0.25);
@@ -612,6 +649,7 @@ button:disabled {
 
 .workspace-grid {
   width: min(1240px, 100%);
+  max-width: 100%;
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
@@ -622,6 +660,7 @@ button:disabled {
 .panel,
 .empty-state,
 .metric {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -641,6 +680,7 @@ button:disabled {
   justify-content: space-between;
   gap: 16px;
   align-items: start;
+  min-width: 0;
 }
 
 label {
@@ -656,6 +696,7 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 11px 12px;
@@ -673,6 +714,11 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
   margin: 14px 0;
+  min-width: 0;
+}
+
+.button-row > * {
+  min-width: 0;
 }
 
 .settings-box,
@@ -691,6 +737,7 @@ summary {
 .main-panel {
   display: grid;
   gap: 18px;
+  min-width: 0;
 }
 
 .status-grid,
@@ -699,6 +746,7 @@ summary {
 .mapping-grid {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .status-grid {
@@ -757,6 +805,7 @@ summary {
 
 .scanner-stage {
   position: relative;
+  min-width: 0;
   min-height: 280px;
   display: grid;
   place-items: center;
@@ -878,11 +927,25 @@ summary {
 }
 
 .scan-session {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 16px;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
   background: #07111f;
   color: white;
+}
+
+.scan-session.camera-active {
+  background: transparent;
 }
 
 .scan-session p,
@@ -890,31 +953,66 @@ summary {
   color: #aebbd0;
 }
 
+.scan-session .scan-topbar {
+  position: absolute;
+  z-index: 3;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  width: auto;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.scan-session .icon-button {
+  min-height: 44px;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 30px rgba(7, 17, 31, 0.28);
+  backdrop-filter: blur(14px);
+}
+
 .scan-camera {
-  position: relative;
-  width: min(900px, 100%);
-  min-height: min(70vh, 760px);
-  margin: 0 auto;
-  overflow: hidden;
-  border-radius: 8px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden !important;
+  border-radius: 0;
   background: #0f172a;
+}
+
+.scan-session.camera-active .scan-camera {
+  background: transparent;
 }
 
 .scan-frame {
   position: absolute;
-  inset: 12%;
+  inset: 22% 12%;
   display: grid;
   place-items: center;
   border: 3px solid rgba(255, 255, 255, 0.82);
-  border-radius: 18px;
+  border-radius: 24px;
   color: white;
   font-weight: 900;
   text-transform: uppercase;
+  pointer-events: none;
 }
 
 .status-dock {
-  width: min(900px, 100%);
-  margin: 0 auto;
+  position: absolute;
+  z-index: 3;
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  width: auto;
+  max-width: none;
+  margin: 0;
 }
 
 .scan-result-strip {
@@ -924,8 +1022,19 @@ summary {
   align-items: center;
   padding: 16px;
   border-radius: 8px;
-  background: white;
+  background: rgba(255, 255, 255, 0.94);
   color: var(--ink);
+  box-shadow: 0 16px 40px rgba(7, 17, 31, 0.24);
+  backdrop-filter: blur(18px);
+}
+
+.scan-result-strip > div {
+  min-width: 0;
+}
+
+.scan-result-strip strong,
+.scan-result-strip b {
+  overflow-wrap: anywhere;
 }
 
 .scan-result-strip span {
@@ -935,7 +1044,7 @@ summary {
 
 @media (max-width: 900px) {
   .app-shell {
-    padding: 16px;
+    padding: 14px;
   }
 
   .topbar,
@@ -970,6 +1079,16 @@ summary {
 
   .sync-pill {
     white-space: normal;
+  }
+
+  .service-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .metric,
+  .empty-state {
+    padding: 14px;
   }
 }
 </style>

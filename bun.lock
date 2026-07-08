@@ -11,6 +11,7 @@
         "@capgo/capacitor-updater": "latest",
         "@ionic/vue": "latest",
         "@ionic/vue-router": "latest",
+        "ionicons": "latest",
         "papaparse": "latest",
         "qrcode": "latest",
         "vue": "latest",
@@ -22,6 +23,7 @@
         "@capacitor/android": "latest",
         "@capacitor/cli": "latest",
         "@capacitor/ios": "latest",
+        "@capgo/vite-capacitor": "^0.1.1",
         "@eslint/js": "latest",
         "@types/node": "latest",
         "@types/papaparse": "latest",
@@ -143,6 +145,8 @@
     "@capgo/camera-preview": ["@capgo/camera-preview@8.8.0", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-e7WMiK5M7epMDNw0/b62DfZ0aPt0HAOsKnotV8xbWqr1W8N4BCAQSwLSXgpNkaMYQqDT2Oix6OBf8V6FYPOghw=="],
 
     "@capgo/capacitor-updater": ["@capgo/capacitor-updater@8.49.7", "", { "peerDependencies": { "@capacitor/core": "^8.0.0" } }, "sha512-zewMYUiiSMxn4CB3yF0y7gB/I8fks06vXdhq3bRwmFFW/nwtgi37uGYgfn5x5PmURWbLfI43ds6wKE/D/4SFAg=="],
+
+    "@capgo/vite-capacitor": ["@capgo/vite-capacitor@0.1.1", "", { "peerDependencies": { "vite": ">=4.0.0" } }, "sha512-G+R1RUsk3okwXsLyScaAXOu5y5IL/9JezFEekcA6WheTFykz46yCzhWpsXoUnH1dl57iVDgFbhf3/9hTd/6PEg=="],
 
     "@capsizecss/unpack": ["@capsizecss/unpack@4.0.1", "", { "dependencies": { "fontkitten": "^1.0.3" } }, "sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ=="],
 

@@ -17,7 +17,8 @@ type PreviewBounds = {
 
 const duplicateWindowMs = 1600
 const cameraTimeoutMs = 5000
-const defaultPreviewSelector = '.scanner-stage'
+const cameraPreviewActiveClass = 'camera-preview-active'
+const defaultPreviewSelector = '#camera-preview'
 
 export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string) => void | Promise<void>, previewSelector = defaultPreviewSelector) {
   const active = ref(false)
@@ -44,6 +45,7 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
       await CameraPreview.stop().catch(() => undefined)
       await removeListeners()
       active.value = false
+      setPreviewTransparency(false)
     })
   }
 
@@ -60,6 +62,7 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
       }
 
       error.value = null
+      setPreviewTransparency(true)
       await removeListeners()
       await nextTick()
 
@@ -112,6 +115,7 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
       )
       active.value = true
     }).catch((scanError: unknown) => {
+      setPreviewTransparency(false)
       error.value = scanError instanceof Error ? scanError.message : 'Camera scanner failed'
       active.value = false
     })
@@ -146,17 +150,25 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
   return { active, error, start, stop }
 }
 
+function setPreviewTransparency(isActive: boolean) {
+  document.documentElement.classList.toggle(cameraPreviewActiveClass, isActive)
+  document.body?.classList.toggle(cameraPreviewActiveClass, isActive)
+}
+
 function previewBounds(selector: string): PreviewBounds {
-  const rect = document.querySelector<HTMLElement>(selector)?.getBoundingClientRect()
-  if (!rect) {
+  const previewElement = document.querySelector<HTMLElement>(selector)
+  const rect = previewElement?.getBoundingClientRect()
+  const parentRect = previewElement?.parentElement?.getBoundingClientRect()
+  const bounds = rect && rect.width > 1 && rect.height > 1 ? rect : parentRect
+  if (!bounds) {
     return { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }
   }
 
   return {
-    x: Math.max(0, Math.round(rect.left)),
-    y: Math.max(0, Math.round(rect.top)),
-    width: Math.max(1, Math.round(rect.width)),
-    height: Math.max(1, Math.round(rect.height)),
+    x: Math.max(0, Math.round(bounds.left)),
+    y: Math.max(0, Math.round(bounds.top)),
+    width: Math.max(1, Math.round(bounds.width)),
+    height: Math.max(1, Math.round(bounds.height)),
   }
 }
 
