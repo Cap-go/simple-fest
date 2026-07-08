@@ -1,0 +1,6 @@
+{
+  "name": "EzFest",
+  "subtitle": "Festival operations platform",
+  "privacyPolicyUrl": "https://digitalshiftou.com/privacy",
+  "privacyPolicyText": "EzFest does not require an account and does not include advertising or analytics SDKs. Imported festival spreadsheets and scan events are stored locally on the device. Optional device sync sends the current festival database and scan events through a temporary live sync room while connected; the sync service is not designed to persist festival databases. Camera access is used only to scan festival QR codes and device sync invite QR codes."
+}

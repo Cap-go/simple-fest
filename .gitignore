@@ -16,6 +16,7 @@ dist-ssr
 .astro
 codedb.snapshot
 worker/src/worker-configuration.d.ts
+.asc/
 
 # Editor directories and files
 .vscode/*

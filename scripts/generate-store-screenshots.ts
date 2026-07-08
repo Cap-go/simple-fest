@@ -12,6 +12,7 @@ const targets = [
   { name: 'ios-6.7', directory: 'store/screenshots/ios-6.7', width: 430, height: 932, deviceScaleFactor: 3 },
   { name: 'ios-6.5', directory: 'store/screenshots/ios-6.5', width: 428, height: 926, deviceScaleFactor: 3 },
   { name: 'ios-5.5', directory: 'store/screenshots/ios-5.5', width: 414, height: 736, deviceScaleFactor: 3 },
+  { name: 'ios-ipad-12.9', directory: 'store/screenshots/ios-ipad-12.9', width: 1024, height: 1366, deviceScaleFactor: 2 },
   { name: 'android-phone', directory: 'store/screenshots/android-phone', width: 360, height: 640, deviceScaleFactor: 3 },
 ]
 
@@ -222,7 +223,7 @@ async function seedDemo(page: Page) {
     { dbKey, deviceKey, demoDb },
   )
   await page.reload({ waitUntil: 'networkidle' })
-  await page.waitForSelector('text=Festival Scan Demo')
+  await page.waitForSelector('text=Ezfest Demo')
 }
 
 async function startVite(port: number) {

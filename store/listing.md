@@ -1,44 +1,44 @@
-# Festival Scan Store Listing
+# EzFest Store Listing
 
 ## App Identity
 
-- App name: Festival Scan
-- Bundle ID / package name: `com.riderx.festivalscan`
+- App name: EzFest
+- Bundle ID / package name: `com.ezfest.app`
 - Category: Utilities / Productivity
 - Age rating posture: suitable for general audiences; the app scans tickets and imported attendee rows only.
 
 ## Short Descriptions
 
 Apple subtitle:
-Festival QR scanner for teams
+Festival operations platform
 
 Google Play short description:
-Scan festival QR tickets from CSV or Sheets, offline-first with live sync.
+Manage festival operations from CSV or Sheets, offline-first with live sync.
 
 ## Promotional Text
 
-Import a sheet, let AI map ticket columns, scan entrance, day, food, and drink QR codes, then sync live with other devices.
+Manage check-in, passes, meals, drinks, and team sync from one local-first festival operations app.
 
 ## Full Description
 
-Festival Scan turns a spreadsheet into a local-first QR scanner for festival operations.
+EzFest helps festival teams manage on-site operations from a spreadsheet.
 
-Import a CSV, XLSX, or public Google Sheet export, and the app detects the ticket code column plus scan modes such as entrance, day passes, meals, drinks, and custom checkpoints. Staff can scan QR codes with the camera, enter a code manually, see the latest validation result, and export an updated CSV after the event.
+Import a CSV, XLSX, or public Google Sheet export, and the app detects the ticket code column plus operational modes such as entrance, day passes, meals, drinks, and custom checkpoints. Staff can scan QR codes with the camera, enter a code manually, see the latest validation result, and export an updated CSV after the event.
 
-For multi-device teams, one device can host a festival session and show an invite QR. Other devices join to receive the current database plus live scan events while network is available. If network drops, each device keeps scanning locally and can export its own CSV.
+For multi-device teams, one device can host a festival session and show an invite QR. Other devices join to receive the current database plus live scan events while network is available. If network drops, each device keeps working locally and can export its own CSV.
 
 Key features:
 
-- Import CSV, XLSX, or public Google Sheet CSV data.
+- Manage festival check-in from CSV, XLSX, or public Google Sheet data.
 - AI-assisted schema mapping with deterministic fallback heuristics.
-- Dynamic home screen based on detected scan modes.
+- Dynamic home screen based on detected festival workflows.
 - QR camera scanning and manual code validation.
-- Entrance, day pass, food, drink, and custom scan workflows.
-- Local-first scan state with CSV export.
+- Entrance, day pass, food, drink, and custom operations.
+- Local-first event state with CSV export.
 - Optional device sync by invite QR.
 - Example template included for reliable imports.
 
-Festival Scan is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
+EzFest is built for temporary event teams that need a practical festival operations platform without provisioning a full ticketing backend.
 
 ## Keywords
 
@@ -46,7 +46,7 @@ festival,ticket,qr,scanner,csv,sheet,check-in,food,drink,sync
 
 ## What's New
 
-Initial generic festival scanner with spreadsheet import, AI mapping, local scanning, CSV export, and device sync rooms.
+Initial EzFest release with spreadsheet import, AI mapping, local scanning, CSV export, and device sync rooms.
 
 ## Privacy And Data Safety Notes
 
@@ -80,5 +80,6 @@ Store assets:
 - iOS 6.7 inch screenshots: `store/screenshots/ios-6.7/*.png` (1290x2796)
 - iOS 6.5 inch screenshots: `store/screenshots/ios-6.5/*.png` (1284x2778)
 - iOS 5.5 inch screenshots: `store/screenshots/ios-5.5/*.png` (1242x2208)
+- iPad Pro 12.9 inch screenshots: `store/screenshots/ios-ipad-12.9/*.png` (2048x2732)
 - Android phone screenshots: `store/screenshots/android-phone/*.png` (1080x1920)
 - Regenerate screenshots: `bun run store:screenshots`
