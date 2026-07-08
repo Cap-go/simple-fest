@@ -260,7 +260,6 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
 
     <section class="scan-camera" :aria-label="cameraMode === 'join' ? 'Invite scanner' : 'Ticket scanner'">
       <div id="camera-preview" />
-      <div class="scan-frame" aria-hidden="true" />
     </section>
 
     <aside class="status-dock" aria-live="polite">
@@ -506,6 +505,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
   padding: 0 !important;
   overflow: hidden !important;
   overscroll-behavior: none;
+  --ion-background-color: transparent !important;
   background: transparent !important;
 }
 
@@ -519,6 +519,7 @@ function mergeDatabases(current: FestivalDb | null, remote: FestivalDb) {
   max-width: 100%;
   overflow: hidden !important;
   overscroll-behavior: none;
+  --ion-background-color: transparent !important;
   background: transparent !important;
 }
 
@@ -940,7 +941,7 @@ summary {
   overflow: hidden !important;
   overscroll-behavior: none;
   touch-action: none;
-  background: #07111f;
+  background: transparent;
   color: white;
 }
 
@@ -984,24 +985,11 @@ summary {
   margin: 0;
   overflow: hidden !important;
   border-radius: 0;
-  background: #0f172a;
+  background: transparent;
 }
 
 .scan-session.camera-active .scan-camera {
   background: transparent;
-}
-
-.scan-frame {
-  position: absolute;
-  inset: 22% 12%;
-  display: grid;
-  place-items: center;
-  border: 3px solid rgba(255, 255, 255, 0.82);
-  border-radius: 24px;
-  color: white;
-  font-weight: 900;
-  text-transform: uppercase;
-  pointer-events: none;
 }
 
 .status-dock {

@@ -8,19 +8,11 @@ type ListenerHandle = {
   remove: () => Promise<void>
 }
 
-type PreviewBounds = {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
 const duplicateWindowMs = 1600
 const cameraTimeoutMs = 5000
 const cameraPreviewActiveClass = 'camera-preview-active'
-const defaultPreviewSelector = '#camera-preview'
 
-export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string) => void | Promise<void>, previewSelector = defaultPreviewSelector) {
+export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string) => void | Promise<void>) {
   const active = ref(false)
   const error = ref<string | null>(null)
   const listeners = ref<ListenerHandle[]>([])
@@ -100,7 +92,6 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
         CameraPreview.start({
           parent: 'camera-preview',
           className: 'native-camera-preview',
-          ...previewBounds(previewSelector),
           position: 'rear',
           toBack: true,
           aspectMode: 'cover',
@@ -113,6 +104,7 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
         }),
         cameraTimeoutMs,
       )
+      await setFullscreenPreviewSize()
       active.value = true
     }).catch((scanError: unknown) => {
       setPreviewTransparency(false)
@@ -155,21 +147,11 @@ function setPreviewTransparency(isActive: boolean) {
   document.body?.classList.toggle(cameraPreviewActiveClass, isActive)
 }
 
-function previewBounds(selector: string): PreviewBounds {
-  const previewElement = document.querySelector<HTMLElement>(selector)
-  const rect = previewElement?.getBoundingClientRect()
-  const parentRect = previewElement?.parentElement?.getBoundingClientRect()
-  const bounds = rect && rect.width > 1 && rect.height > 1 ? rect : parentRect
-  if (!bounds) {
-    return { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }
-  }
-
-  return {
-    x: Math.max(0, Math.round(bounds.left)),
-    y: Math.max(0, Math.round(bounds.top)),
-    width: Math.max(1, Math.round(bounds.width)),
-    height: Math.max(1, Math.round(bounds.height)),
-  }
+async function setFullscreenPreviewSize() {
+  const viewport = window.visualViewport
+  const width = Math.ceil(Math.max(window.innerWidth, viewport?.width ?? 0, document.documentElement.clientWidth)) + 2
+  const height = Math.ceil(Math.max(window.innerHeight, viewport?.height ?? 0, document.documentElement.clientHeight)) + 2
+  await CameraPreview.setPreviewSize({ width, height }).catch(() => undefined)
 }
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
