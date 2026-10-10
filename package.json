@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vue-tsc --noEmit && vite build && bunx cap copy",
-    "lint": "vue-tsc --noEmit",
+    "build": "vue-tsc -b && vite build && bunx cap copy",
+    "lint": "vue-tsc -b && eslint .",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -37,10 +37,10 @@
     "xlsx": "latest"
   },
   "devDependencies": {
+    "@astrojs/check": "latest",
     "@capacitor/android": "latest",
     "@capacitor/cli": "latest",
     "@capacitor/ios": "latest",
-    "@astrojs/check": "latest",
     "@eslint/js": "latest",
     "@types/node": "latest",
     "@types/papaparse": "latest",
@@ -48,6 +48,7 @@
     "@vitejs/plugin-vue": "latest",
     "@vue/compiler-sfc": "latest",
     "eslint": "latest",
+    "eslint-plugin-vue": "latest",
     "globals": "latest",
     "jsdom": "latest",
     "playwright": "latest",
