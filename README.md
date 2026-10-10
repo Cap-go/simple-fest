@@ -1,4 +1,4 @@
-# Simple Festival
+# Simple Fest
 
 Local-first festival scanner for entrance, day pass, food, drink, and custom scan modes.
 

@@ -106,7 +106,7 @@ const rows = [
 
 const demoDb = {
   id: 'simple-festival-store-demo',
-  name: 'Simple Festival Demo',
+  name: 'Summer Fest 2026',
   createdAt: '2026-06-01T10:00:00.000Z',
   updatedAt: '2026-06-01T10:24:00.000Z',
   deviceId,

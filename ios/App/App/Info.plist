@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Simple Festival</string>
+        <string>Simple Fest</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Simple Festival never records audio. Ticket scanning uses the camera only.</string>
+	<string>Simple Fest never records audio. Ticket scanning uses the camera only.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Simple Festival does not use your location. Ticket scanning works without it.</string>
+	<string>Simple Fest does not use your location. Ticket scanning works without it.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed to scan festival and sync invite QR codes.</string>
 	<key>UIApplicationSceneManifest</key>

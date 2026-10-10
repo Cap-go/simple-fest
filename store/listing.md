@@ -1,8 +1,8 @@
-# Simple Festival Store Listing
+# Simple Fest Store Listing
 
 ## App Identity
 
-- App name: Simple Festival
+- App name: Simple Fest
 - SKU: `ee.forgr.festivalscan`
 - Primary language: English (U.S.)
 - Bundle ID / package name: `ee.forgr.festivalscan`
@@ -23,7 +23,7 @@ Import a sheet, let AI map ticket columns, scan entrance, day, food, and drink Q
 
 ## Full Description
 
-Simple Festival turns a spreadsheet into a local-first QR scanner for festival operations.
+Simple Fest turns a spreadsheet into a local-first QR scanner for festival operations.
 
 Import a CSV, XLSX, or public Google Sheet export, and the app detects the ticket code column plus scan modes such as entrance, day passes, meals, drinks, and custom checkpoints. Staff can scan QR codes with the camera, enter a code manually, see the latest validation result, and export an updated CSV after the event.
 
@@ -40,7 +40,7 @@ Key features:
 - Optional device sync by invite QR.
 - Example template included for reliable imports.
 
-Simple Festival is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
+Simple Fest is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
 
 ## Keywords
 

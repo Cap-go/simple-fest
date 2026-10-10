@@ -47,9 +47,9 @@ async function join() {
       <h2 class="section-title">Invite a device</h2>
       <section class="invite card">
         <img :src="syncQr" alt="Device sync invite QR" width="280" height="280" />
-        <p class="muted">On the other phone, open Simple Festival and choose <b>Join another device</b>.</p>
+        <p class="muted">On the other phone, open Simple Fest and choose <b>Join another device</b>.</p>
         <div class="row">
-          <IonButton fill="outline" @click="shareText('Simple Festival invite', syncInviteText)">
+          <IonButton fill="outline" @click="shareText('Simple Fest invite', syncInviteText)">
             <IonIcon slot="start" :icon="shareOutline" aria-hidden="true" />Share
           </IonButton>
           <IonButton fill="outline" @click="copyInvite">

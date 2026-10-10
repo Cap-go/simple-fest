@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Simple Festival</string>
-    <string name="title_activity_main">Simple Festival</string>
+    <string name="app_name">Simple Fest</string>
+    <string name="title_activity_main">Simple Fest</string>
     <string name="package_name">ee.forgr.festivalscan</string>
     <string name="custom_url_scheme">ee.forgr.festivalscan</string>
 </resources>
