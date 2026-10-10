@@ -36,7 +36,7 @@
     "@capgo/camera-preview": "latest",
     "@capgo/capacitor-in-app-review": "latest",
     "@capgo/capacitor-keep-awake": "latest",
-    "@capgo/capacitor-pretty-toast": "latest",
+    "@capgo/capacitor-native-navigation": "latest",
     "@capgo/capacitor-updater": "latest",
     "@capgo/native-audio": "latest",
     "@ionic/vue": "latest",

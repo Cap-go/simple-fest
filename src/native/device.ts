@@ -8,7 +8,8 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { CapgoInAppReview } from '@capgo/capacitor-in-app-review'
 import { KeepAwake } from '@capgo/capacitor-keep-awake'
 import { NativeAudio } from '@capgo/native-audio'
-import { toast } from '@capgo/capacitor-pretty-toast'
+import { toastController } from '@ionic/vue'
+import { alertCircle, checkmarkCircle, informationCircle, warning } from 'ionicons/icons'
 import type { ScanStatus } from '../domain/types'
 
 const isNative = Capacitor.isNativePlatform()
@@ -83,8 +84,27 @@ export async function setScreenAwake(awake: boolean) {
   await (awake ? KeepAwake.keepAwake() : KeepAwake.allowSleep()).catch(() => undefined)
 }
 
-export function notify(kind: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) {
-  toast[kind](title, message ? { message, duration: 3200 } : { duration: 2400 })
+// Ionic toast instead of @capgo/capacitor-pretty-toast: its iOS overlay stays on screen when the user
+// touches the app while it is showing (8.1.22).
+const toastStyle = {
+  success: { color: 'success', icon: checkmarkCircle },
+  error: { color: 'danger', icon: alertCircle },
+  info: { color: 'dark', icon: informationCircle },
+  warning: { color: 'warning', icon: warning },
+} as const
+
+export async function notify(kind: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) {
+  await toastController.dismiss().catch(() => undefined)
+  const toast = await toastController.create({
+    header: title,
+    message,
+    duration: message ? 3200 : 2400,
+    position: 'top',
+    swipeGesture: 'vertical',
+    cssClass: 'app-toast',
+    ...toastStyle[kind],
+  })
+  await toast.present()
 }
 
 export async function copyText(value: string) {

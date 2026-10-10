@@ -170,3 +170,8 @@ ion-button.tall {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Keep top toasts below the native navbar, which sits over the WebView. */
+ion-toast.app-toast {
+  top: max(calc(var(--cap-native-navigation-top, 0px) - env(safe-area-inset-top)), 0px);
+}

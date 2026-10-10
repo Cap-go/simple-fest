@@ -10,6 +10,7 @@ import SetupTab from './components/SetupTab.vue'
 import SyncTab from './components/SyncTab.vue'
 import { useFestival } from './composables/useFestival'
 import { tapFeedback } from './native/device'
+import { nativeChrome, useNativeChrome } from './native/navigation'
 
 type Tab = 'scan' | 'sync' | 'event'
 
@@ -23,8 +24,14 @@ const tabs = [
   { id: 'sync' as const, label: 'Devices', icon: syncOutline, activeIcon: syncIcon },
   { id: 'event' as const, label: 'Event', icon: settingsOutline, activeIcon: settings },
 ]
-const title = computed(() => (tab.value === 'scan' ? (db.value?.name ?? 'Simple Festival') : tab.value === 'sync' ? 'Devices' : 'Event'))
+const title = computed(() => (tab.value === 'scan' ? (db.value?.name ?? 'Simple Fest') : tab.value === 'sync' ? 'Devices' : 'Event'))
 const syncOn = computed(() => syncStatus.value.mode === 'hosting' || syncStatus.value.mode === 'connected')
+const syncLabel = computed(() => (syncOn.value ? (syncStatus.value.peers > 0 ? `${syncStatus.value.peers + 1} devices` : 'Live') : 'Offline'))
+
+useNativeChrome(
+  { visible: computed(() => Boolean(db.value) && !camera.value), title, tab, syncLabel, syncOn },
+  (next) => selectTab(next),
+)
 
 watch(db, (value, previous) => {
   if (!value) {
@@ -53,7 +60,7 @@ function selectTab(next: Tab) {
     <OnboardingView v-else-if="!db" @import="importOpen = true" @join="camera = 'join'" />
 
     <IonPage v-else>
-      <IonHeader class="ion-no-border">
+      <IonHeader v-if="!nativeChrome" class="ion-no-border">
         <IonToolbar>
           <IonTitle>{{ title }}</IonTitle>
           <IonButtons slot="end">
@@ -63,19 +70,21 @@ function selectTab(next: Tab) {
               @click="selectTab('sync')"
             >
               <span class="dot" aria-hidden="true" />
-              {{ syncOn ? (syncStatus.peers > 0 ? `${syncStatus.peers + 1} devices` : 'Live') : 'Offline' }}
+              {{ syncLabel }}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
+      <!-- Web content scrolls in its own view, so iOS cannot draw its scroll-edge effect under native bars. -->
+      <div v-if="nativeChrome" class="native-edge top" aria-hidden="true" />
+      <IonContent :class="{ 'native-insets': nativeChrome }">
         <ScanTab v-if="tab === 'scan'" @scan="camera = 'scan'" />
         <SyncTab v-else-if="tab === 'sync'" @scan-invite="camera = 'join'" />
         <SetupTab v-else @import="importOpen = true" />
       </IonContent>
 
-      <IonFooter class="tab-footer">
+      <IonFooter v-if="!nativeChrome" class="tab-footer">
         <nav class="tab-bar" aria-label="Sections">
           <button
             v-for="item in tabs"
@@ -99,6 +108,29 @@ function selectTab(next: Tab) {
 <style scoped>
 ion-title {
   font-weight: 800;
+}
+
+.native-edge {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.native-edge.top {
+  top: 0;
+  height: calc(max(var(--cap-native-navigation-top, 0px), env(safe-area-inset-top)) + 12px);
+  background: linear-gradient(var(--ion-background-color) 70%, rgba(var(--ion-background-color-rgb), 0));
+}
+
+/* Native bars sit over the WebView. The plugin publishes their sizes as CSS vars; when iOS hosts the
+   WebView in its own tab controller the bar height arrives as safe area instead, so take the larger. */
+.native-insets {
+  --padding-top: max(var(--cap-native-navigation-top, 0px), env(safe-area-inset-top));
+  --padding-bottom: calc(max(var(--cap-native-navigation-bottom, 0px), env(safe-area-inset-bottom)) + 16px);
+  --padding-start: max(var(--cap-native-navigation-left, 0px), env(safe-area-inset-left));
+  --padding-end: max(var(--cap-native-navigation-right, 0px), env(safe-area-inset-right));
 }
 
 .sync-chip {

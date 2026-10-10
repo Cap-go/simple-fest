@@ -16,7 +16,7 @@
         "@capgo/camera-preview": "latest",
         "@capgo/capacitor-in-app-review": "latest",
         "@capgo/capacitor-keep-awake": "latest",
-        "@capgo/capacitor-pretty-toast": "latest",
+        "@capgo/capacitor-native-navigation": "latest",
         "@capgo/capacitor-updater": "latest",
         "@capgo/native-audio": "latest",
         "@ionic/vue": "latest",
@@ -172,7 +172,7 @@
 
     "@capgo/capacitor-keep-awake": ["@capgo/capacitor-keep-awake@8.1.18", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-AYylZctfD/JcuNX2XAQYmX9v9d5BqnHzQ/eSjHV/zgKaWj4IodJLRl03ZmbbjTCzda32JJtmEnqN4HY4WTb9Mg=="],
 
-    "@capgo/capacitor-pretty-toast": ["@capgo/capacitor-pretty-toast@8.1.22", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-RDrQU55bDsPzJfygSvy827WLAWLuFTmmTwILHJP0Mx4ifz6XEeQDrRj/tfr7vmPqNDeNUiHH+dBZWauAtxBAnA=="],
+    "@capgo/capacitor-native-navigation": ["@capgo/capacitor-native-navigation@8.6.2", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-AXIu1+z02RJ6JWN721RL3dH4zAV65GYmtW4hsF1EKymAD0A6BNjvTdiYSirvTHvScvWH5Gmvgw/CUZdHJ1jtdA=="],
 
     "@capgo/capacitor-updater": ["@capgo/capacitor-updater@8.49.7", "", { "peerDependencies": { "@capacitor/core": "^8.0.0" } }, "sha512-zewMYUiiSMxn4CB3yF0y7gB/I8fks06vXdhq3bRwmFFW/nwtgi37uGYgfn5x5PmURWbLfI43ds6wKE/D/4SFAg=="],
 

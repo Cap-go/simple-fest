@@ -22,7 +22,7 @@ let package = Package(
         .package(name: "CapgoCameraPreview", path: "../../../node_modules/.bun/@capgo+camera-preview@8.8.0+767ac80cbab8ae50/node_modules/@capgo/camera-preview"),
         .package(name: "CapgoCapacitorInAppReview", path: "../../../node_modules/.bun/@capgo+capacitor-in-app-review@8.2.7+767ac80cbab8ae50/node_modules/@capgo/capacitor-in-app-review"),
         .package(name: "CapgoCapacitorKeepAwake", path: "../../../node_modules/.bun/@capgo+capacitor-keep-awake@8.1.18+767ac80cbab8ae50/node_modules/@capgo/capacitor-keep-awake"),
-        .package(name: "CapgoCapacitorPrettyToast", path: "../../../node_modules/.bun/@capgo+capacitor-pretty-toast@8.1.22+767ac80cbab8ae50/node_modules/@capgo/capacitor-pretty-toast"),
+        .package(name: "CapgoCapacitorNativeNavigation", path: "../../../node_modules/.bun/@capgo+capacitor-native-navigation@8.6.2+767ac80cbab8ae50/node_modules/@capgo/capacitor-native-navigation"),
         .package(name: "CapgoCapacitorUpdater", path: "../../../node_modules/.bun/@capgo+capacitor-updater@8.49.7+767ac80cbab8ae50/node_modules/@capgo/capacitor-updater"),
         .package(name: "CapgoNativeAudio", path: "../../../node_modules/.bun/@capgo+native-audio@8.4.2+767ac80cbab8ae50/node_modules/@capgo/native-audio")
     ],
@@ -42,7 +42,7 @@ let package = Package(
                 .product(name: "CapgoCameraPreview", package: "CapgoCameraPreview"),
                 .product(name: "CapgoCapacitorInAppReview", package: "CapgoCapacitorInAppReview"),
                 .product(name: "CapgoCapacitorKeepAwake", package: "CapgoCapacitorKeepAwake"),
-                .product(name: "CapgoCapacitorPrettyToast", package: "CapgoCapacitorPrettyToast"),
+                .product(name: "CapgoCapacitorNativeNavigation", package: "CapgoCapacitorNativeNavigation"),
                 .product(name: "CapgoCapacitorUpdater", package: "CapgoCapacitorUpdater"),
                 .product(name: "CapgoNativeAudio", package: "CapgoNativeAudio")
             ]
