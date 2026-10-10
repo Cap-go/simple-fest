@@ -53,8 +53,12 @@
   --app-max: 720px;
 }
 
+/* Ionic's dark palette (main.ts) sets overlay and step colors on :root.ios / :root.md; brand values win here. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root,
+  :root.ios,
+  :root.md {
+    --ion-overlay-background-color: #1b2539;
     --ion-background-color: #0b1220;
     --ion-background-color-rgb: 11, 18, 32;
     --ion-text-color: #e8edf4;
