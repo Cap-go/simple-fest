@@ -31,67 +31,114 @@ function progress(id: string) {
 </script>
 
 <template>
-  <div v-if="db" class="page-width scan-tab">
-    <h2 id="modes-title" class="section-title">Scan mode</h2>
-    <div class="mode-grid" role="radiogroup" aria-labelledby="modes-title">
-      <button
-        v-for="service in db.schema.services"
-        :key="service.id"
-        :class="['mode-card', { active: activeService?.id === service.id }]"
-        type="button"
-        role="radio"
-        :aria-checked="activeService?.id === service.id"
-        @click="selectMode(service.id)"
-      >
-        <span class="mode-icon"><IonIcon :icon="serviceIcon(service.kind)" aria-hidden="true" /></span>
-        <strong>{{ service.label }}</strong>
-        <span class="mode-count">{{ statFor(service.id)?.scanned ?? 0 }} / {{ statFor(service.id)?.eligible ?? 0 }}</span>
-        <span class="bar" aria-hidden="true"><span :style="{ width: `${progress(service.id)}%` }" /></span>
-      </button>
-    </div>
-    <p v-if="!db.schema.services.length" class="muted empty">No scan modes yet. Add one in the Event tab.</p>
+  <div v-if="db" class="scan-tab">
+    <section class="pane-main">
+      <h2 id="modes-title" class="section-title">Scan mode</h2>
+      <div class="mode-grid" role="radiogroup" aria-labelledby="modes-title">
+        <button
+          v-for="service in db.schema.services"
+          :key="service.id"
+          :class="['mode-card', { active: activeService?.id === service.id }]"
+          type="button"
+          role="radio"
+          :aria-checked="activeService?.id === service.id"
+          @click="selectMode(service.id)"
+        >
+          <span class="mode-icon"><IonIcon :icon="serviceIcon(service.kind)" aria-hidden="true" /></span>
+          <strong>{{ service.label }}</strong>
+          <span class="mode-count">{{ statFor(service.id)?.scanned ?? 0 }} / {{ statFor(service.id)?.eligible ?? 0 }}</span>
+          <span class="bar" aria-hidden="true"><span :style="{ width: `${progress(service.id)}%` }" /></span>
+        </button>
+      </div>
+      <p v-if="!db.schema.services.length" class="muted empty">No scan modes yet. Add one in the Event tab.</p>
 
-    <IonButton class="tall start" expand="block" :disabled="!activeService" @click="emit('scan')">
-      <IonIcon slot="start" :icon="scanOutline" aria-hidden="true" />
-      Scan {{ activeService?.label ?? 'tickets' }}
-    </IonButton>
-
-    <form class="manual card" @submit.prevent="submitManual">
-      <label for="manual-code" class="sr-only">Ticket code or email</label>
-      <input
-        id="manual-code"
-        v-model="manualCode"
-        autocomplete="off"
-        autocapitalize="characters"
-        enterkeyhint="go"
-        placeholder="Type ticket code or email"
-      />
-      <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check ticket">
-        <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
+      <IonButton class="tall start" expand="block" :disabled="!activeService" @click="emit('scan')">
+        <IonIcon slot="start" :icon="scanOutline" aria-hidden="true" />
+        Scan {{ activeService?.label ?? 'tickets' }}
       </IonButton>
-    </form>
 
-    <ResultCard v-if="lastResult" class="last" :result="lastResult" :db="db" :mode="activeService?.label" />
+      <form class="manual card" @submit.prevent="submitManual">
+        <label for="manual-code" class="sr-only">Ticket code or email</label>
+        <input
+          id="manual-code"
+          v-model="manualCode"
+          autocomplete="off"
+          autocapitalize="characters"
+          enterkeyhint="go"
+          placeholder="Type ticket code or email"
+        />
+        <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check ticket">
+          <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
+        </IonButton>
+      </form>
+    </section>
 
-    <template v-if="scanLog.length">
-      <h2 class="section-title">Recent scans</h2>
-      <IonList class="inset" lines="full">
-        <IonItem v-for="entry in scanLog.slice(0, 12)" :key="entry.id">
-          <IonIcon slot="start" :icon="statusMeta(entry.status).icon" :color="statusMeta(entry.status).tone" aria-hidden="true" />
-          <IonLabel>
-            <h3>{{ entry.guest ?? entry.payload }}</h3>
-            <p>{{ entry.title }} · {{ entry.serviceLabel }}</p>
-          </IonLabel>
-          <IonNote slot="end">{{ timeLabel(entry.at) }}</IonNote>
-        </IonItem>
-      </IonList>
-    </template>
+    <section class="pane-side">
+      <ResultCard v-if="lastResult" class="last" :result="lastResult" :db="db" :mode="activeService?.label" />
+
+      <template v-if="scanLog.length">
+        <h2 class="section-title">Recent scans</h2>
+        <IonList class="inset" lines="full">
+          <IonItem v-for="entry in scanLog.slice(0, 12)" :key="entry.id">
+            <IonIcon slot="start" :icon="statusMeta(entry.status).icon" :color="statusMeta(entry.status).tone" aria-hidden="true" />
+            <IonLabel>
+              <h3>{{ entry.guest ?? entry.payload }}</h3>
+              <p>{{ entry.title }} · {{ entry.serviceLabel }}</p>
+            </IonLabel>
+            <IonNote slot="end">{{ timeLabel(entry.at) }}</IonNote>
+          </IonItem>
+        </IonList>
+      </template>
+      <p v-if="!lastResult" class="side-empty muted">Scan results and recent scans appear here.</p>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .scan-tab {
-  padding: 0 16px 24px;
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 0 max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+}
+
+.pane-main {
+  container-type: inline-size;
+}
+
+.side-empty {
+  display: none;
+}
+
+/* Wide windows (iPhone Duo inner display, tablets in landscape): two panes. */
+@media (min-width: 840px), (orientation: landscape) and (min-width: 640px) {
+  .scan-tab {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .pane-side {
+    position: sticky;
+    top: 0;
+    padding-top: 46px;
+  }
+
+  .last {
+    margin-top: 0;
+  }
+
+  .side-empty {
+    display: grid;
+    place-items: center;
+    min-height: 180px;
+    border: 2px dashed var(--app-line);
+    border-radius: var(--app-radius);
+    text-align: center;
+    padding: 24px;
+  }
 }
 
 .mode-grid {
@@ -100,7 +147,7 @@ function progress(id: string) {
   gap: 10px;
 }
 
-@media (min-width: 640px) {
+@container (min-width: 560px) {
   .mode-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

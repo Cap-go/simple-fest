@@ -226,7 +226,7 @@ async function confirmRemoveMode(id: string, label: string) {
 
 <style scoped>
 .setup-tab {
-  padding: 16px 16px 32px;
+  padding: 16px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left));
 }
 
 .stats {

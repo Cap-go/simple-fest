@@ -17,21 +17,23 @@ const steps = [
   <IonPage>
     <IonContent :fullscreen="true">
       <main class="onboarding page-width">
-        <header class="hero">
-          <img src="/icon.svg" alt="" width="88" height="88" />
-          <h1>Simple Festival</h1>
-          <p>Check tickets at the gate, the bar and the food stand from one spreadsheet.</p>
-        </header>
+        <div class="intro">
+          <header class="hero">
+            <img src="/icon.svg" alt="" width="88" height="88" />
+            <h1>Simple Festival</h1>
+            <p>Check tickets at the gate, the bar and the food stand from one spreadsheet.</p>
+          </header>
 
-        <ol class="steps">
-          <li v-for="step in steps" :key="step.title">
-            <span class="step-icon"><IonIcon :icon="step.icon" aria-hidden="true" /></span>
-            <div>
-              <strong>{{ step.title }}</strong>
-              <p>{{ step.text }}</p>
-            </div>
-          </li>
-        </ol>
+          <ol class="steps">
+            <li v-for="step in steps" :key="step.title">
+              <span class="step-icon"><IonIcon :icon="step.icon" aria-hidden="true" /></span>
+              <div>
+                <strong>{{ step.title }}</strong>
+                <p>{{ step.text }}</p>
+              </div>
+            </li>
+          </ol>
+        </div>
 
         <div v-if="syncStatus.mode !== 'off'" class="waiting card" role="status">
           <IonSpinner v-if="syncStatus.mode !== 'error'" name="dots" />
@@ -63,7 +65,8 @@ const steps = [
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  padding: calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 24px);
+  padding: calc(env(safe-area-inset-top) + 40px) max(24px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px)
+    max(24px, env(safe-area-inset-left));
 }
 
 .hero {
@@ -154,6 +157,67 @@ const steps = [
   .onboarding {
     max-width: 520px;
     justify-content: center;
+  }
+
+  .actions {
+    margin-top: 0;
+  }
+}
+
+/* Short displays such as the iPhone Duo outer screen: keep the actions visible. */
+@media (max-height: 760px) {
+  .onboarding {
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+  }
+
+  .hero img {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+  }
+
+  .hero h1 {
+    margin-top: 12px;
+    font-size: 1.7rem;
+  }
+
+  .hero p {
+    font-size: 0.98rem;
+  }
+
+  .steps {
+    gap: 12px;
+    margin: 22px 0 18px;
+  }
+
+  .steps p {
+    font-size: 0.9rem;
+  }
+
+  .step-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 1.15rem;
+  }
+}
+
+/* Landscape: intro on the left, actions on the right. */
+@media (orientation: landscape) and (min-width: 600px) {
+  .onboarding {
+    max-width: 980px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 40px;
+    align-items: center;
+  }
+
+  .hero {
+    text-align: left;
+  }
+
+  .hero p {
+    margin: 0;
   }
 
   .actions {

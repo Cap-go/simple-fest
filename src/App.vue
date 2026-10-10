@@ -139,7 +139,7 @@ ion-title {
   display: flex;
   max-width: var(--app-max);
   margin: 0 auto;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .tab-bar button {

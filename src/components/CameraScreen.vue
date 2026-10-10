@@ -109,31 +109,33 @@ function selectMode(id: string) {
       </button>
     </nav>
 
-    <div class="frame-wrap" aria-hidden="true">
-      <div class="frame"><i /><i /><i /><i /></div>
-    </div>
+    <div class="stage">
+      <div class="frame-wrap" aria-hidden="true">
+        <div class="frame"><i /><i /><i /><i /></div>
+      </div>
 
-    <footer class="bottom">
-      <ResultCard v-if="result" :key="scanCount" :result="result" :db="db" :mode="activeService?.label" />
-      <p v-else class="hint" role="status">{{ hint }}</p>
+      <footer class="bottom">
+        <ResultCard v-if="result" :key="scanCount" :result="result" :db="db" :mode="activeService?.label" />
+        <p v-else class="hint" role="status">{{ hint }}</p>
 
-      <form v-if="manualOpen" class="manual" @submit.prevent="submitManual">
-        <input
-          v-model="manualCode"
-          aria-label="Ticket code"
-          autocomplete="off"
-          autocapitalize="characters"
-          enterkeyhint="go"
-          :placeholder="mode === 'join' ? 'Paste invite code' : 'Type ticket code'"
-        />
-        <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check">
-          <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
+        <form v-if="manualOpen" class="manual" @submit.prevent="submitManual">
+          <input
+            v-model="manualCode"
+            aria-label="Ticket code"
+            autocomplete="off"
+            autocapitalize="characters"
+            enterkeyhint="go"
+            :placeholder="mode === 'join' ? 'Paste invite code' : 'Type ticket code'"
+          />
+          <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check">
+            <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
+          </IonButton>
+        </form>
+        <IonButton v-else class="manual-toggle" fill="clear" @click="manualOpen = true">
+          <IonIcon slot="start" :icon="keypadOutline" aria-hidden="true" />Type a code
         </IonButton>
-      </form>
-      <IonButton v-else class="manual-toggle" fill="clear" @click="manualOpen = true">
-        <IonIcon slot="start" :icon="keypadOutline" aria-hidden="true" />Type a code
-      </IonButton>
-    </footer>
+      </footer>
+    </div>
   </div>
 </template>
 
@@ -158,7 +160,7 @@ function selectMode(id: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: calc(env(safe-area-inset-top) + 8px) 12px 8px 4px;
+  padding: calc(env(safe-area-inset-top) + 8px) max(12px, env(safe-area-inset-right)) 8px max(4px, env(safe-area-inset-left));
   background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
 }
 
@@ -222,6 +224,13 @@ function selectMode(id: string) {
 .modes button.active {
   background: #fff;
   color: #0f172a;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .frame-wrap {
@@ -300,8 +309,32 @@ function selectMode(id: string) {
   gap: 12px;
   min-height: 210px;
   align-content: end;
-  padding: 16px 16px calc(env(safe-area-inset-bottom) + 16px);
+  padding: 16px max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 16px) max(16px, env(safe-area-inset-left));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.6) 30%);
+}
+
+@media (max-height: 720px) {
+  .bottom {
+    min-height: 0;
+  }
+}
+
+/* Landscape: frame on the left, feedback on the right. */
+@media (orientation: landscape) and (min-width: 600px) {
+  .stage {
+    flex-direction: row;
+  }
+
+  .bottom {
+    width: min(420px, 45%);
+    align-content: center;
+    background: none;
+  }
+
+  .frame {
+    width: min(300px, 60vh);
+  }
+
 }
 
 .bottom > *,
@@ -352,5 +385,12 @@ function selectMode(id: string) {
   --color: #fff;
   justify-self: center;
   width: auto;
+}
+
+@media (orientation: landscape) and (min-width: 600px) {
+  .top,
+  .modes {
+    max-width: none;
+  }
 }
 </style>

@@ -92,7 +92,7 @@ async function join() {
 
 <style scoped>
 .sync-tab {
-  padding: 16px 16px 24px;
+  padding: 16px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
 }
 
 .status {
