@@ -1,8 +1,10 @@
-# Festival Scan Store Listing
+# Simple Festival Store Listing
 
 ## App Identity
 
-- App name: Festival Scan
+- App name: Simple Festival
+- SKU: `ee.forgr.festivalscan`
+- Primary language: English (U.S.)
 - Bundle ID / package name: `ee.forgr.festivalscan`
 - Category: Utilities / Productivity
 - Age rating posture: suitable for general audiences; the app scans tickets and imported attendee rows only.
@@ -21,7 +23,7 @@ Import a sheet, let AI map ticket columns, scan entrance, day, food, and drink Q
 
 ## Full Description
 
-Festival Scan turns a spreadsheet into a local-first QR scanner for festival operations.
+Simple Festival turns a spreadsheet into a local-first QR scanner for festival operations.
 
 Import a CSV, XLSX, or public Google Sheet export, and the app detects the ticket code column plus scan modes such as entrance, day passes, meals, drinks, and custom checkpoints. Staff can scan QR codes with the camera, enter a code manually, see the latest validation result, and export an updated CSV after the event.
 
@@ -38,7 +40,7 @@ Key features:
 - Optional device sync by invite QR.
 - Example template included for reliable imports.
 
-Festival Scan is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
+Simple Festival is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
 
 ## Keywords
 
@@ -62,7 +64,7 @@ Camera access is needed to scan festival and sync invite QR codes.
 
 ## Review Notes
 
-The app can be reviewed without an account. Use the built-in `Load example` action to populate sample festival data, then enter `TCK-1001` in the manual QR field and tap `Validate` to see an accepted scan.
+The app can be reviewed without an account. Tap `Try with sample data` on the first screen, then type `TCK-1001` in the "Type ticket code or email" field and press the arrow to see an accepted scan. Typing it again shows "Already scanned"; `TCK-1003` shows "Not paid". `Scan Entrance` opens the camera scanner. The Devices tab hosts a sync room and shows an invite QR for a second device.
 
 ## Generated Store Assets
 
