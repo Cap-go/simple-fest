@@ -2,6 +2,7 @@
 // App Store Connect Asset Library API. Existing placements in the same groups are replaced.
 // Env: ASC_KEY_ID, ASC_ISSUER_ID, optional BUNDLE_ID, LOCALE, DRY_RUN=1.
 // Usage: bun scripts/asc/upload-store-assets.ts
+import { createHash } from 'node:crypto'
 import { ok, type Json } from './client'
 
 const bundleId = process.env.BUNDLE_ID ?? 'ee.forgr.festivalscan'
@@ -89,10 +90,18 @@ for (const placement of plan) {
 async function uploadImage(file: string, category: 'APP_SCREENSHOTS_AND_PREVIEWS' | 'CREATIVE_ASSETS') {
   const bytes = new Uint8Array(await Bun.file(file).arrayBuffer())
   const fileName = file.split('/').slice(-2).join('-')
+  // Reference names are unique per library, so key them by content and reuse unchanged images.
+  const referenceName = `simple-fest/${fileName}#${createHash('sha256').update(bytes).digest('hex').slice(0, 12)}`
+  const existing: Json[] = (
+    await ok('GET', `/v1/appAssetLibraries/${library.id}/images?filter[referenceName]=${encodeURIComponent(referenceName)}&limit=1`)
+  ).data
+  if (existing[0] && existing[0].attributes.state !== 'ARCHIVED') {
+    return existing[0].id as string
+  }
   const reserved = await ok('POST', '/v1/appAssetLibraryImages', {
     data: {
       type: 'appAssetLibraryImages',
-      attributes: { category, fileName, fileSize: bytes.length, referenceName: `simple-festival/${fileName}` },
+      attributes: { category, fileName, fileSize: bytes.length, referenceName },
       relationships: { assetLibrary: { data: { type: 'appAssetLibraries', id: library.id } } },
     },
   })
