@@ -187,13 +187,14 @@ export function decodeInvite(value: string): SyncInvite {
 }
 
 export function defaultSyncBackendUrl() {
-  const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-  const configured = viteEnv?.VITE_SYNC_BACKEND_URL?.trim()
+  const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | boolean | undefined> }).env
+  const configured = String(viteEnv?.VITE_SYNC_BACKEND_URL ?? '').trim()
   if (configured) {
     return configured
   }
 
-  if (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+  // Native WebViews also run on localhost, so only the Vite dev server targets the local worker.
+  if (viteEnv?.DEV && typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
     return 'http://127.0.0.1:8787'
   }
   return deployedSyncBackendUrl
