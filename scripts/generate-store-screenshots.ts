@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { chromium, type Page } from 'playwright'
 
-const syncBackendUrl = 'https://simple-festival-sync.digitalshift-ee.workers.dev'
+const syncBackendUrl = process.env.SYNC_BACKEND_URL ?? 'https://simple-festival-sync.digitalshift-ee.workers.dev'
 const deviceId = 'device-store-demo'
 const dbKey = 'simple-festival.db.v1'
 const deviceKey = 'simple-festival.device-id.v1'
@@ -130,35 +130,34 @@ const scenes = [
     fileName: '01-import.png',
     prepare: async (page: Page) => {
       await clearDemo(page)
-      await page.waitForSelector('text=Import a festival sheet')
-      await page.evaluate(() => window.scrollTo(0, 0))
+      await page.waitForSelector('text=Import guest list')
     },
   },
   {
     fileName: '02-dynamic-home.png',
     prepare: async (page: Page) => {
       await seedDemo(page)
-      await page.locator('.modes-panel').scrollIntoViewIfNeeded()
-      await page.waitForSelector('text=Drink tokens')
     },
   },
   {
     fileName: '03-scan-result.png',
     prepare: async (page: Page) => {
       await seedDemo(page)
-      await page.getByPlaceholder('Ticket code or email').fill('TCK-1001')
-      await page.getByRole('button', { name: 'Validate' }).click()
-      await page.waitForSelector('text=Accepted')
-      await page.locator('.scanner-layout').scrollIntoViewIfNeeded()
+      await page.getByPlaceholder(/ticket code/i).fill('TCK-1001')
+      await page.getByPlaceholder(/ticket code/i).press('Enter')
+      await page.waitForSelector('.result-card')
+      await page.locator('.result-card').scrollIntoViewIfNeeded()
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     },
   },
   {
     fileName: '04-device-sync.png',
     prepare: async (page: Page) => {
       await seedDemo(page)
-      await page.getByRole('button', { name: 'Host festival' }).click()
+      await page.getByRole('button', { name: 'Devices', exact: true }).click()
+      await page.getByRole('button', { name: /^Host / }).click()
       await page.waitForSelector('img[alt="Device sync invite QR"]')
-      await page.locator('.sync-panel').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(800)
     },
   },
 ]
@@ -222,7 +221,7 @@ async function seedDemo(page: Page) {
     { dbKey, deviceKey, demoDb },
   )
   await page.reload({ waitUntil: 'networkidle' })
-  await page.waitForSelector('text=Festival Scan Demo')
+  await page.waitForSelector('.mode-card')
 }
 
 async function startVite(port: number) {
