@@ -3,7 +3,7 @@
 ## App Identity
 
 - App name: Festival Scan
-- Bundle ID / package name: `com.riderx.festivalscan`
+- Bundle ID / package name: `ee.forgr.festivalscan`
 - Category: Utilities / Productivity
 - Age rating posture: suitable for general audiences; the app scans tickets and imported attendee rows only.
 

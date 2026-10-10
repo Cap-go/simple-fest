@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Simple Festival</string>
     <string name="title_activity_main">Simple Festival</string>
-    <string name="package_name">com.riderx.festivalscan</string>
-    <string name="custom_url_scheme">com.riderx.festivalscan</string>
+    <string name="package_name">ee.forgr.festivalscan</string>
+    <string name="custom_url_scheme">ee.forgr.festivalscan</string>
 </resources>

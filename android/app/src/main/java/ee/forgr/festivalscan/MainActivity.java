@@ -1,4 +1,4 @@
-package com.riderx.festivalscan;
+package ee.forgr.festivalscan;
 
 import com.getcapacitor.BridgeActivity;
 

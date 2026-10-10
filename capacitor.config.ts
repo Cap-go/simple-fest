@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'com.riderx.festivalscan',
+  appId: 'ee.forgr.festivalscan',
   appName: 'Simple Festival',
   webDir: 'dist',
   plugins: {
