@@ -77,8 +77,21 @@ Store assets:
 
 - Google Play icon: `store/assets/play-store-icon.png` (512x512)
 - Google Play feature graphic: `store/assets/play-store-feature-graphic.png` (1024x500)
-- iOS 6.7 inch screenshots: `store/screenshots/ios-6.7/*.png` (1290x2796)
+- iOS 6.9 inch screenshots: `store/screenshots/ios-6.9/*.png` (1320x2868, required iPhone size)
+- iOS 6.7 inch screenshots: `store/screenshots/ios-6.7/*.png` (1290x2796, also accepted for 6.9 inch)
 - iOS 6.5 inch screenshots: `store/screenshots/ios-6.5/*.png` (1284x2778)
 - iOS 5.5 inch screenshots: `store/screenshots/ios-5.5/*.png` (1242x2208)
 - Android phone screenshots: `store/screenshots/android-phone/*.png` (1080x1920)
-- Regenerate screenshots: `bun run store:screenshots`
+- iPhone Duo outer display: `store/screenshots/iphone-duo-outer-portrait/*.png` (1398x2034) and `iphone-duo-outer-landscape` (2034x1398)
+- iPhone Duo inner display: `store/screenshots/iphone-duo-inner-portrait/*.png` (2007x2853) and `iphone-duo-inner-landscape` (2853x2007)
+- Regenerate screenshots: `bun run store:screenshots` (set `SYNC_BACKEND_URL` to a running sync worker for the hosting scene)
+
+iPhone Duo screenshots are optional today and required for submissions starting April 2027.
+
+App Store creative assets (App Store Connect, October 2026; shown on iOS 27 and later):
+
+- Product page header 21:9: `store/creative/product-page-header-21x9.png` (3840x1646)
+- Universal header + search results 16:9: `store/creative/universal-16x9.png` (5244x2950, enable "Use header asset in search results")
+- Search results 3:2: `store/creative/search-results-3x2.png` (3840x2560)
+- Regenerate after screenshots: `bun run store:creative`
+- All images are opaque (no alpha), localized copy is English only for now.
