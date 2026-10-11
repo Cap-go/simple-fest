@@ -1,41 +1,26 @@
-name: Capgo
+name: Capgo Release
+
+# Every push to main ships to Capgo:
+# - JS-only change  -> live update (OTA bundle) on the channel, users get it on next background/launch
+# - native change   -> Capgo Cloud Build for iOS + Android (new plugin, permissions, native config)
+# Capgo decides which one with `bundle releaseType`; you can force either from the Actions tab.
 
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "android/**"
-      - "ios/**"
-      - "resources/**"
-      - "capacitor.config.ts"
-      - "package.json"
-      - "bun.lock"
-      - "vite.config.ts"
-      - "tsconfig*.json"
-      - ".github/workflows/capgo.yml"
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "android/**"
-      - "ios/**"
-      - "resources/**"
-      - "capacitor.config.ts"
-      - "package.json"
-      - "bun.lock"
-      - "vite.config.ts"
-      - "tsconfig*.json"
-      - ".github/workflows/capgo.yml"
+    tags:
+      - 'v*'
+  pull_request:
   workflow_dispatch:
     inputs:
       channel:
-        description: Capgo channel.
+        description: Capgo channel
         required: true
         default: production
         type: string
       release_target:
-        description: Auto-detect, force live update, or force native build.
+        description: Let Capgo decide, force OTA, or force native build
         required: true
         default: auto
         type: choice
@@ -44,7 +29,7 @@ on:
           - ota
           - native
       native_platform:
-        description: Native platform when a native build is requested.
+        description: Native platform when a native build runs
         required: true
         default: both
         type: choice
@@ -52,165 +37,136 @@ on:
           - android
           - ios
           - both
+      build_mode:
+        description: Native build mode
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - debug
 
 permissions:
   contents: read
 
+# Queue releases on main instead of cancelling them: a cancelled job does not stop
+# the Capgo cloud build it started, which then blocks the next build slot.
 concurrency:
   group: capgo-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  CAPGO_APP_ID: ee.forgr.festivalscan
-  CAPGO_CHANNEL: ${{ github.event.inputs.channel || 'production' }}
+  APP_ID: ee.forgr.festivalscan
+  CAPGO_CHANNEL: ${{ github.event.inputs.channel || (github.ref_type == 'tag' && 'production') || 'production' }}
+  CAPGO_BUILD_MODE: ${{ github.event.inputs.build_mode || 'release' }}
 
 jobs:
-  checks:
-    name: Checks
+  verify:
+    name: Lint, test and build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.x
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run test
       - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
 
   detect-release:
     name: Detect native build need
     runs-on: ubuntu-latest
-    needs: checks
+    needs: verify
     if: github.event_name != 'pull_request'
     outputs:
-      native_build_needed: ${{ steps.release-check.outputs.native_build_needed }}
+      release_type: ${{ steps.release-type.outputs.release_type }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          filter: blob:none
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.x
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Check if native build is required
-        id: release-check
+      - run: bun install --frozen-lockfile
+      - name: Ask Capgo for release type
+        id: release-type
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
         run: |
           : "${CAPGO_TOKEN:?Missing CAPGO_TOKEN secret}"
-          set +e
-          bunx @capgo/cli@latest build needed --channel "$CAPGO_CHANNEL"
-          exit_code=$?
-          set -e
-
-          if [ "$exit_code" -eq 0 ]; then
-            echo "native_build_needed=false" >> "$GITHUB_OUTPUT"
-            echo "Release type: live update"
-          elif [ "$exit_code" -eq 1 ]; then
-            echo "native_build_needed=true" >> "$GITHUB_OUTPUT"
-            echo "Release type: native build"
-          else
-            echo "Capgo build-needed check failed with exit code $exit_code" >&2
-            exit "$exit_code"
+          OUTPUT="$(bunx @capgo/cli@latest bundle releaseType "$APP_ID" --channel "$CAPGO_CHANNEL" -a "$CAPGO_TOKEN" 2>/dev/null | tr -d '\r')"
+          echo "$OUTPUT"
+          RELEASE_TYPE="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Recommendation: *//p' | tail -n 1)"
+          if [[ "$RELEASE_TYPE" != "OTA" && "$RELEASE_TYPE" != "native" ]]; then
+            echo "Unexpected release type: $RELEASE_TYPE" >&2
+            exit 1
           fi
+          echo "release_type=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Capgo release type: $RELEASE_TYPE"
 
-  capgo-live-update:
-    name: Upload live update
+  upload-ota:
+    name: Live update (Capgo OTA)
     runs-on: ubuntu-latest
-    needs:
-      - checks
-      - detect-release
+    needs: [verify, detect-release]
     if: >
       github.event_name != 'pull_request' &&
       ((github.event.inputs.release_target || 'auto') == 'ota' ||
-        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.native_build_needed == 'false'))
+        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.release_type == 'OTA'))
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.x
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build mobile app
-        run: bun run build
-
-      - name: Upload Capgo bundle
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Upload bundle
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
         run: |
           : "${CAPGO_TOKEN:?Missing CAPGO_TOKEN secret}"
-          bunx @capgo/cli@latest bundle upload --channel "$CAPGO_CHANNEL" --delta
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            BUNDLE_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            BUNDLE_VERSION="$(node -p "require('./package.json').version")-build.${GITHUB_RUN_NUMBER}"
+          fi
+          bunx @capgo/cli@latest bundle upload "$APP_ID" \
+            --path dist \
+            --channel "$CAPGO_CHANNEL" \
+            --bundle "$BUNDLE_VERSION" \
+            --comment "GitHub ${GITHUB_SHA::7}" \
+            --delta \
+            --fail-on-incompatible \
+            --version-exists-ok \
+            -a "$CAPGO_TOKEN"
 
-  capgo-android-build:
-    name: Android native build
+  build-android:
+    name: Capgo Cloud Build — Android
     runs-on: ubuntu-latest
-    needs:
-      - checks
-      - detect-release
+    needs: [verify, detect-release]
     if: >
       github.event_name != 'pull_request' &&
       ((github.event.inputs.release_target || 'auto') == 'native' ||
-        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.native_build_needed == 'true')) &&
-      ((github.event.inputs.native_platform || 'both') == 'android' || (github.event.inputs.native_platform || 'both') == 'both')
-    permissions:
-      contents: read
-      actions: write
+        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.release_type == 'native')) &&
+      ((github.event.inputs.native_platform || 'both') != 'ios')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.x
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile --linker=hoisted
-
-      - name: Prepare Android project
-        run: |
-          bun run build
-          bunx cap sync android
-
-      - name: Request Android build through Capgo CLI
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: bunx cap sync android
+      - name: Request Android build
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
           ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
@@ -218,56 +174,87 @@ jobs:
           KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
           KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
           KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
-          BUILD_OUTPUT_UPLOAD_ENABLED: "true"
-          BUILD_OUTPUT_RETENTION_SECONDS: "604800"
-        run: bunx @capgo/cli@latest build request --platform android --path . --ai-analytics
+          PLAY_CONFIG_JSON: ${{ secrets.PLAY_CONFIG_JSON }}
+        run: |
+          : "${CAPGO_TOKEN:?Missing CAPGO_TOKEN secret}"
+          : "${ANDROID_KEYSTORE_FILE:?Missing ANDROID_KEYSTORE_FILE secret}"
+          ARGS=(
+            build request "$APP_ID"
+            --platform android
+            --path .
+            --sync-android-version
+            --ai-analytics
+            --build-mode "$CAPGO_BUILD_MODE"
+            --android-keystore-file "$ANDROID_KEYSTORE_FILE"
+            --keystore-key-alias "$KEYSTORE_KEY_ALIAS"
+            --keystore-key-password "$KEYSTORE_KEY_PASSWORD"
+            --keystore-store-password "$KEYSTORE_STORE_PASSWORD"
+            --output-upload
+            --output-retention 7d
+            -a "$CAPGO_TOKEN"
+          )
+          if [[ -n "${PLAY_CONFIG_JSON:-}" ]]; then
+            ARGS+=(--play-config-json "$PLAY_CONFIG_JSON")
+          else
+            ARGS+=(--no-playstore-upload)
+          fi
+          bunx @capgo/cli@latest "${ARGS[@]}"
 
-  capgo-ios-build:
-    name: iOS native build
+  build-ios:
+    name: Capgo Cloud Build — iOS
     runs-on: ubuntu-latest
-    needs:
-      - checks
-      - detect-release
+    needs: [verify, detect-release]
     if: >
       github.event_name != 'pull_request' &&
       ((github.event.inputs.release_target || 'auto') == 'native' ||
-        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.native_build_needed == 'true')) &&
-      ((github.event.inputs.native_platform || 'both') == 'ios' || (github.event.inputs.native_platform || 'both') == 'both')
-    permissions:
-      contents: read
-      actions: write
+        ((github.event.inputs.release_target || 'auto') == 'auto' && needs.detect-release.outputs.release_type == 'native')) &&
+      ((github.event.inputs.native_platform || 'both') != 'android')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.x
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile --linker=hoisted
-
-      - name: Prepare iOS project
-        run: |
-          bun run build
-          bunx cap sync ios
-
-      - name: Request iOS build through Capgo CLI
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: bunx cap sync ios
+      - name: Request iOS build
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          # JSON map {"<bundleId>": {"name", "profile": "<base64>"}}; the CLI reads it from the env.
+          CAPGO_IOS_PROVISIONING_MAP: ${{ secrets.CAPGO_IOS_PROVISIONING_MAP }}
           APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           CAPGO_IOS_PROVISIONING_MAP_BASE64: ${{ secrets.CAPGO_IOS_PROVISIONING_MAP_BASE64 || secrets.CAPGO_IOS_PROVISIONING_MAP }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
           APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-          BUILD_OUTPUT_UPLOAD_ENABLED: "true"
-          BUILD_OUTPUT_RETENTION_SECONDS: "604800"
-        run: bunx @capgo/cli@latest build request --platform ios --path . --ai-analytics
+        run: |
+          : "${CAPGO_TOKEN:?Missing CAPGO_TOKEN secret}"
+          : "${BUILD_CERTIFICATE_BASE64:?Missing BUILD_CERTIFICATE_BASE64 secret}"
+          : "${CAPGO_IOS_PROVISIONING_MAP:?Missing CAPGO_IOS_PROVISIONING_MAP secret}"
+          ARGS=(
+            build request "$APP_ID"
+            --platform ios
+            --path .
+            --sync-ios-version
+            --ai-analytics
+            --build-mode "$CAPGO_BUILD_MODE"
+            --build-certificate-base64 "$BUILD_CERTIFICATE_BASE64"
+            --p12-password "$P12_PASSWORD"
+            --app-store-connect-team-id "$APP_STORE_CONNECT_TEAM_ID"
+            --ios-scheme App
+            --ios-target App
+            --ios-distribution app_store
+            --output-upload
+            --output-retention 7d
+            -a "$CAPGO_TOKEN"
+          )
+          if [[ -n "${APPLE_KEY_ID:-}" && -n "${APPLE_ISSUER_ID:-}" && -n "${APPLE_KEY_CONTENT:-}" ]]; then
+            ARGS+=(--apple-key-id "$APPLE_KEY_ID" --apple-issuer-id "$APPLE_ISSUER_ID" --apple-key-content "$APPLE_KEY_CONTENT")
+          fi
+          bunx @capgo/cli@latest "${ARGS[@]}"
