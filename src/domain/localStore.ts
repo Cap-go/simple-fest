@@ -1,4 +1,4 @@
-import type { AiSettings, FestivalDb, SyncInvite } from './types'
+import type { FestivalDb, SyncInvite } from './types'
 
 const dbKey = 'simple-festival.db.v1'
 const deviceKey = 'simple-festival.device-id.v1'
@@ -55,24 +55,9 @@ export function getDeviceId() {
   return next
 }
 
-export function loadAiSettings(): AiSettings {
-  return {
-    apiKey: '',
-    model: 'gpt-4.1-mini',
-    baseUrl: 'https://api.openai.com/v1',
-    ...readJson<Partial<AiSettings>>(settingsKey),
-  }
-}
-
-export function saveAiSettings(settings: AiSettings) {
-  localStorage.setItem(
-    settingsKey,
-    JSON.stringify({
-      apiKey: settings.apiKey,
-      model: settings.model,
-      baseUrl: settings.baseUrl,
-    }),
-  )
+// Older builds stored an OpenAI API key; AI now runs through Sign in with ChatGPT.
+export function purgeLegacyAiSettings() {
+  localStorage.removeItem(settingsKey)
 }
 
 function readJson<T>(key: string): T | null {

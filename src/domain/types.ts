@@ -2,11 +2,8 @@ export type ScanKind = 'entrance' | 'day' | 'food' | 'drink' | 'custom'
 
 export type RawRow = Record<string, string>
 
-export type AiSettings = {
-  apiKey: string
-  model: string
-  baseUrl: string
-}
+// Sends instructions plus input to a language model and resolves with its text answer.
+export type AiClient = (instructions: string, input: string) => Promise<string>
 
 export type ScanService = {
   id: string

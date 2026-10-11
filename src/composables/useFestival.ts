@@ -7,17 +7,17 @@ import {
   clearDatabase,
   getDeviceId,
   loadActiveMode,
-  loadAiSettings,
   loadDatabase,
   loadSyncSession,
   saveActiveMode,
-  saveAiSettings,
+  purgeLegacyAiSettings,
   saveDatabase,
   saveSyncSession,
 } from '../domain/localStore'
 import { applyScan, mergeRemoteScanEvent, serviceStats } from '../domain/scanEngine'
 import { SyncController, decodeInvite, encodeInvite } from '../domain/syncTransport'
-import type { AiSettings, FestivalDb, ScanResult, ScanService, SchemaMapping, SyncInvite, SyncStatus } from '../domain/types'
+import type { FestivalDb, ScanResult, ScanService, SchemaMapping, SyncInvite, SyncStatus } from '../domain/types'
+import { askChatGpt, chatGptAvailable, connectChatGpt, currentChatGptAccount, disconnectChatGpt, type ChatGptAccount } from '../ai/chatgpt'
 import { maybeRequestReview, notify, saveCsv, scanFeedback } from '../native/device'
 
 export type RoleColumn = 'idColumn' | 'codeColumn' | 'nameColumn' | 'emailColumn' | 'paidColumn'
@@ -25,7 +25,12 @@ export type ScanLogEntry = ScanResult & { id: string; at: string; serviceLabel: 
 
 const deviceId = getDeviceId()
 const db = ref<FestivalDb | null>(loadDatabase())
-const settings = ref<AiSettings>(loadAiSettings())
+const chatGpt = ref<ChatGptAccount | null>(null)
+const chatGptBusy = ref(false)
+purgeLegacyAiSettings()
+if (chatGptAvailable) {
+  void currentChatGptAccount().then((account) => (chatGpt.value = account))
+}
 const busy = ref(false)
 const savedMode = loadActiveMode()
 const activeServiceId = ref<string | null>(
@@ -113,14 +118,14 @@ function resetSyncState() {
 async function runImport(source: { kind: 'file'; file: File } | { kind: 'sheet'; url: string } | { kind: 'example' }, name: string) {
   busy.value = true
   try {
-    const aiSettings = settings.value.apiKey.trim() ? settings.value : undefined
+    const ai = chatGpt.value ? askChatGpt : undefined
     const festivalName = name.trim()
     const result =
       source.kind === 'file'
-        ? await importFile(source.file, festivalName, deviceId, aiSettings)
+        ? await importFile(source.file, festivalName, deviceId, ai)
         : source.kind === 'sheet'
-          ? await importSheetUrl(source.url, festivalName, deviceId, aiSettings)
-          : await importExample(deviceId, aiSettings)
+          ? await importSheetUrl(source.url, festivalName, deviceId, ai)
+          : await importExample(deviceId, ai)
 
     resetSyncState()
     setAndSaveDb(result.db)
@@ -236,8 +241,23 @@ function resetDb() {
   scanLog.value = []
 }
 
-function persistAiSettings() {
-  saveAiSettings(settings.value)
+async function connectAi() {
+  chatGptBusy.value = true
+  try {
+    chatGpt.value = await connectChatGpt()
+    notify('success', 'ChatGPT connected', chatGpt.value.email || undefined)
+  } catch (error) {
+    if (!(error instanceof Error && /cancel/i.test(error.message))) {
+      notify('error', 'Could not connect ChatGPT', error instanceof Error ? error.message : undefined)
+    }
+  } finally {
+    chatGptBusy.value = false
+  }
+}
+
+async function disconnectAi() {
+  await disconnectChatGpt()
+  chatGpt.value = null
 }
 
 function updateSchema(patch: (schema: SchemaMapping) => Partial<SchemaMapping>) {
@@ -319,7 +339,9 @@ export function useFestival() {
   return {
     deviceId,
     db,
-    settings,
+    chatGpt,
+    chatGptBusy,
+    chatGptAvailable,
     busy,
     activeServiceId,
     activeService,
@@ -340,7 +362,8 @@ export function useFestival() {
     pushSnapshot: () => sync.broadcastSnapshot(),
     exportCsv,
     resetDb,
-    persistAiSettings,
+    connectAi,
+    disconnectAi,
     renameFestival,
     updateRoleColumn,
     updateService,

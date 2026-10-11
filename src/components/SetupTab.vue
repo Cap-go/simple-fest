@@ -9,7 +9,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonNote,
+  IonSpinner,
   IonSelect,
   IonSelectOption,
   alertController,
@@ -22,7 +22,7 @@ import { getBuildInfo, type BuildInfo } from '../native/device'
 import { kindOptions, serviceIcon } from '../ui'
 
 const emit = defineEmits<{ import: [] }>()
-const { db, settings, statFor, exportCsv, resetDb, persistAiSettings, renameFestival, updateRoleColumn, updateService, addService, removeService } =
+const { db, chatGpt, chatGptBusy, chatGptAvailable, connectAi, disconnectAi, statFor, exportCsv, resetDb, renameFestival, updateRoleColumn, updateService, addService, removeService } =
   useFestival()
 
 const name = ref(db.value?.name ?? '')
@@ -201,27 +201,25 @@ async function confirmRemoveMode(id: string, label: string) {
     </IonList>
 
     <h2 class="section-title">AI column detection</h2>
-    <IonAccordionGroup class="inset-accordion">
-      <IonAccordion value="ai">
-        <IonItem slot="header">
-          <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
-          <IonLabel>OpenAI-compatible API</IonLabel>
-          <IonNote slot="end">{{ settings.apiKey ? 'On' : 'Off' }}</IonNote>
-        </IonItem>
-        <IonList slot="content" lines="full">
-          <IonItem>
-            <IonInput v-model="settings.apiKey" type="password" label="API key" label-placement="stacked" placeholder="sk-…" @ion-change="persistAiSettings" />
-          </IonItem>
-          <IonItem>
-            <IonInput v-model="settings.model" label="Model" label-placement="stacked" @ion-change="persistAiSettings" />
-          </IonItem>
-          <IonItem>
-            <IonInput v-model="settings.baseUrl" label="Base URL" label-placement="stacked" inputmode="url" @ion-change="persistAiSettings" />
-          </IonItem>
-        </IonList>
-      </IonAccordion>
-    </IonAccordionGroup>
-    <p class="caption muted">Used only when importing. The key stays on this device.</p>
+    <IonList class="inset" lines="none">
+      <IonItem v-if="chatGpt">
+        <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
+        <IonLabel>
+          <h3>ChatGPT connected</h3>
+          <p>{{ chatGpt.email || 'Your ChatGPT plan' }}</p>
+        </IonLabel>
+        <IonButton slot="end" fill="clear" color="medium" @click="disconnectAi">Disconnect</IonButton>
+      </IonItem>
+      <IonItem v-else button :detail="false" :disabled="!chatGptAvailable || chatGptBusy" @click="connectAi">
+        <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
+        <IonLabel>
+          <h3>Connect ChatGPT</h3>
+          <p>{{ chatGptAvailable ? 'Use your ChatGPT Plus or Pro plan' : 'Available in the mobile app' }}</p>
+        </IonLabel>
+        <IonSpinner v-if="chatGptBusy" slot="end" name="crescent" />
+      </IonItem>
+    </IonList>
+    <p class="caption muted">Reads column names and a few sample rows when you import, to detect scan modes. No API key needed.</p>
 
     <IonButton class="reset" expand="block" fill="outline" color="danger" @click="confirmReset">
       <IonIcon slot="start" :icon="trashOutline" aria-hidden="true" />Remove event from this phone

@@ -32,6 +32,9 @@ project(':capgo-camera-preview').projectDir = new File('../node_modules/.bun/@ca
 include ':capgo-capacitor-in-app-review'
 project(':capgo-capacitor-in-app-review').projectDir = new File('../node_modules/.bun/@capgo+capacitor-in-app-review@8.2.7+767ac80cbab8ae50/node_modules/@capgo/capacitor-in-app-review/android')
 
+include ':capgo-capacitor-inappbrowser'
+project(':capgo-capacitor-inappbrowser').projectDir = new File('../node_modules/.bun/@capgo+capacitor-inappbrowser@8.22.4+767ac80cbab8ae50/node_modules/@capgo/capacitor-inappbrowser/android')
+
 include ':capgo-capacitor-keep-awake'
 project(':capgo-capacitor-keep-awake').projectDir = new File('../node_modules/.bun/@capgo+capacitor-keep-awake@8.1.18+767ac80cbab8ae50/node_modules/@capgo/capacitor-keep-awake/android')
 
@@ -43,3 +46,9 @@ project(':capgo-capacitor-updater').projectDir = new File('../node_modules/.bun/
 
 include ':capgo-native-audio'
 project(':capgo-native-audio').projectDir = new File('../node_modules/.bun/@capgo+native-audio@8.4.2+767ac80cbab8ae50/node_modules/@capgo/native-audio/android')
+
+include ':capgo-oauth-loopback'
+project(':capgo-oauth-loopback').projectDir = new File('../node_modules/.bun/@capgo+oauth-loopback@file+plugins+oauth-loopback+767ac80cbab8ae50/node_modules/@capgo/oauth-loopback/android')
+
+include ':capacitor-secure-storage-plugin'
+project(':capacitor-secure-storage-plugin').projectDir = new File('../node_modules/.bun/capacitor-secure-storage-plugin@0.13.0+767ac80cbab8ae50/node_modules/capacitor-secure-storage-plugin/android')

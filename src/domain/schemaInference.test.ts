@@ -21,36 +21,27 @@ describe('inferSchemaHeuristically', () => {
 })
 
 describe('inferSchema', () => {
-  it('uses AI mapping during parsing when settings include an API key', async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          output_text: JSON.stringify({
-            confidence: 0.94,
-            codeColumn: 'Badge QR',
-            nameColumn: 'Guest name',
-            services: [
-              {
-                id: 'saturday-entry',
-                label: 'Saturday entry',
-                kind: 'day',
-                entitlementColumn: 'Saturday wristband',
-                confidence: 0.92,
-              },
-            ],
-          }),
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
-    )
-    vi.stubGlobal('fetch', fetchMock)
-
-    const schema = await inferSchema(
-      [{ 'Badge QR': 'BADGE-1', 'Guest name': 'Ada Lovelace', 'Saturday wristband': 'yes' }],
-      { apiKey: 'test-key', model: 'gpt-test', baseUrl: 'https://api.example.test/v1' },
+  it('uses the AI client during parsing when one is connected', async () => {
+    const ai = vi.fn(async () =>
+      JSON.stringify({
+        confidence: 0.94,
+        codeColumn: 'Badge QR',
+        nameColumn: 'Guest name',
+        services: [
+          {
+            id: 'saturday-entry',
+            label: 'Saturday entry',
+            kind: 'day',
+            entitlementColumn: 'Saturday wristband',
+            confidence: 0.92,
+          },
+        ],
+      }),
     )
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.example.test/v1/responses', expect.any(Object))
+    const schema = await inferSchema([{ 'Badge QR': 'BADGE-1', 'Guest name': 'Ada Lovelace', 'Saturday wristband': 'yes' }], ai)
+
+    expect(ai).toHaveBeenCalledOnce()
     expect(schema.source).toBe('ai')
     expect(schema.confidence).toBe(0.94)
     expect(schema.codeColumn).toBe('Badge QR')

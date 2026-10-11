@@ -1,4 +1,4 @@
-import type { AiSettings, RawRow, ScanKind, ScanService, SchemaMapping } from './types'
+import type { AiClient, RawRow, ScanKind, ScanService, SchemaMapping } from './types'
 
 type ColumnScore = {
   column: string
@@ -10,15 +10,15 @@ type AiSchemaPayload = Partial<Pick<SchemaMapping, 'idColumn' | 'codeColumn' | '
 const scanWords = ['scan', 'scanned', 'used', 'consumed', 'taken', 'validated', 'checked', 'arrive', 'arrived', 'arrival']
 const ignoredServiceWords = ['vegetarian', 'vegetarien', 'vegan', 'allergy', 'allergies', 'comment', 'note', 'phone', 'telephone']
 
-export async function inferSchema(rows: RawRow[], settings?: AiSettings): Promise<SchemaMapping> {
+export async function inferSchema(rows: RawRow[], ai?: AiClient): Promise<SchemaMapping> {
   const heuristic = inferSchemaHeuristically(rows)
 
-  if (!settings?.apiKey.trim()) {
+  if (!ai) {
     return heuristic
   }
 
   try {
-    const aiMapping = await inferSchemaWithAi(rows, heuristic, settings)
+    const aiMapping = await inferSchemaWithAi(rows, heuristic, ai)
     return mergeAiMapping(rows, heuristic, aiMapping)
   } catch (error) {
     return {
@@ -315,49 +315,30 @@ function labelForColumn(column: string) {
     .trim()
 }
 
-async function inferSchemaWithAi(rows: RawRow[], heuristic: SchemaMapping, settings: AiSettings): Promise<AiSchemaPayload> {
-  const sampleRows = rows.slice(0, 8)
-  const response = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/responses`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${settings.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.model,
-      instructions:
-        'Map a festival attendee spreadsheet into scanner roles. Return only JSON. Column names must exactly match the provided columns.',
-      input: JSON.stringify({
-        task: 'Infer ticket code, identity, payment, and scan services from festival spreadsheet columns.',
-        allowedKinds: ['entrance', 'day', 'food', 'drink', 'custom'],
-        outputShape: {
-          confidence: 'number 0..1',
-          idColumn: 'string optional',
-          codeColumn: 'string optional, ticket code lookup',
-          nameColumn: 'string optional',
-          emailColumn: 'string optional',
-          paidColumn: 'string optional',
-          services:
-            'array of {id,label,kind,entitlementColumn?,consumedColumn?,quotaColumn?,confidence,notes?}',
-          warnings: 'array of strings',
-        },
-        heuristic,
-        columns: heuristic.columns,
-        sampleRows,
-      }),
+async function inferSchemaWithAi(rows: RawRow[], heuristic: SchemaMapping, ai: AiClient): Promise<AiSchemaPayload> {
+  const text = await ai(
+    'Map a festival attendee spreadsheet into scanner roles. Return only JSON. Column names must exactly match the provided columns.',
+    JSON.stringify({
+      task: 'Infer ticket code, identity, payment, and scan services from festival spreadsheet columns.',
+      allowedKinds: ['entrance', 'day', 'food', 'drink', 'custom'],
+      outputShape: {
+        confidence: 'number 0..1',
+        idColumn: 'string optional',
+        codeColumn: 'string optional, ticket code lookup',
+        nameColumn: 'string optional',
+        emailColumn: 'string optional',
+        paidColumn: 'string optional',
+        services: 'array of {id,label,kind,entitlementColumn?,consumedColumn?,quotaColumn?,confidence,notes?}',
+        warnings: 'array of strings',
+      },
+      heuristic,
+      columns: heuristic.columns,
+      sampleRows: rows.slice(0, 8),
     }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`OpenAI request failed (${response.status})`)
+  )
+  if (!text.trim()) {
+    throw new Error('AI response did not include text output')
   }
-
-  const payload = (await response.json()) as unknown
-  const text = extractResponseText(payload)
-  if (!text) {
-    throw new Error('OpenAI response did not include text output')
-  }
-
   return JSON.parse(stripJsonFence(text)) as AiSchemaPayload
 }
 
@@ -392,36 +373,6 @@ function mergeAiMapping(rows: RawRow[], heuristic: SchemaMapping, aiMapping: AiS
     services: services.length ? services : heuristic.services,
     warnings: [...(aiMapping.warnings ?? []), ...heuristic.warnings.filter((warning) => warning.startsWith('No QR'))],
   }
-}
-
-function extractResponseText(payload: unknown): string | undefined {
-  if (!payload || typeof payload !== 'object') {
-    return undefined
-  }
-  const record = payload as Record<string, unknown>
-  if (typeof record.output_text === 'string') {
-    return record.output_text
-  }
-  const output = Array.isArray(record.output) ? record.output : []
-  const chunks: string[] = []
-  for (const item of output) {
-    if (!item || typeof item !== 'object') {
-      continue
-    }
-    const content = (item as Record<string, unknown>).content
-    if (!Array.isArray(content)) {
-      continue
-    }
-    for (const part of content) {
-      if (part && typeof part === 'object') {
-        const text = (part as Record<string, unknown>).text
-        if (typeof text === 'string') {
-          chunks.push(text)
-        }
-      }
-    }
-  }
-  return chunks.join('\n') || undefined
 }
 
 function stripJsonFence(text: string) {
