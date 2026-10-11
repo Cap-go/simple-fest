@@ -113,8 +113,8 @@ const steps = [
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: rgba(var(--ion-color-primary-rgb), 0.12);
-  color: var(--ion-color-primary);
+  background: var(--app-surface);
+  color: var(--ion-text-color);
   font-size: 1.35rem;
 }
 

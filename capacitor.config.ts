@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       // Hidden from main.ts once Vue has mounted.
       launchAutoHide: false,
-      backgroundColor: '#0f172a',
+      backgroundColor: '#000000',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
     },

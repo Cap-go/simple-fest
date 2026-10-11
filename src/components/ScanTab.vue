@@ -152,7 +152,7 @@ function submitManual() {
 }
 
 .modes button ion-icon {
-  color: var(--ion-color-primary);
+  color: var(--app-muted);
   font-size: 1.1rem;
 }
 
@@ -240,7 +240,7 @@ function submitManual() {
 
 .hero-center ion-icon {
   font-size: 1.8rem;
-  color: var(--ion-color-primary);
+  color: var(--app-muted);
 }
 
 .hero-center strong {

@@ -131,9 +131,9 @@ ion-segment {
   justify-items: center;
   gap: 6px;
   padding: 32px 16px;
-  border: 2px dashed rgba(var(--ion-color-primary-rgb), 0.45);
+  border: 2px dashed rgba(var(--ion-text-color-rgb), 0.18);
   border-radius: var(--app-radius);
-  background: rgba(var(--ion-color-primary-rgb), 0.06);
+  background: var(--app-surface);
   color: var(--ion-text-color);
   font: inherit;
   cursor: pointer;
@@ -141,7 +141,7 @@ ion-segment {
 
 .drop-zone ion-icon {
   font-size: 2.4rem;
-  color: var(--ion-color-primary);
+  color: var(--app-muted);
 }
 
 .drop-zone strong {
@@ -178,7 +178,7 @@ ion-button.tall {
 .help ion-icon {
   flex: none;
   font-size: 1.4rem;
-  color: var(--ion-color-secondary);
+  color: var(--app-muted);
 }
 
 .help p {

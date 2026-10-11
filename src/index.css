@@ -2,19 +2,20 @@
   --ion-font-family: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
   --ion-background-color: #f2f2f7;
   --ion-background-color-rgb: 242, 242, 247;
-  --ion-text-color: #0f172a;
-  --ion-text-color-rgb: 15, 23, 42;
+  --ion-text-color: #111111;
+  --ion-text-color-rgb: 17, 17, 17;
   --ion-toolbar-background: #f2f2f7;
   --ion-item-background: #ffffff;
   --ion-card-background: #ffffff;
   --ion-tab-bar-background: rgba(255, 255, 255, 0.92);
 
-  --ion-color-primary: #0f766e;
-  --ion-color-primary-rgb: 15, 118, 110;
+  /* Neutral ink: color is reserved for scan results and sync status. */
+  --ion-color-primary: #111111;
+  --ion-color-primary-rgb: 17, 17, 17;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #0d6861;
-  --ion-color-primary-tint: #27847c;
+  --ion-color-primary-shade: #000000;
+  --ion-color-primary-tint: #2a2a2a;
 
   --ion-color-secondary: #ea580c;
   --ion-color-secondary-rgb: 234, 88, 12;
@@ -47,7 +48,7 @@
   --app-surface: #ffffff;
   --app-surface-2: #e9e9ef;
   --app-line: rgba(15, 23, 42, 0.08);
-  --app-muted: #5b6678;
+  --app-muted: #6e6e73;
   --app-radius: 18px;
   --app-shadow: none;
   --app-max: 720px;
@@ -58,23 +59,23 @@
   :root,
   :root.ios,
   :root.md {
-    --ion-overlay-background-color: #1b2539;
-    --ion-background-color: #0b1220;
-    --ion-background-color-rgb: 11, 18, 32;
-    --ion-text-color: #e8edf4;
-    --ion-text-color-rgb: 232, 237, 244;
-    --ion-toolbar-background: #0b1220;
-    --ion-item-background: #131c2e;
-    --ion-card-background: #131c2e;
-    --ion-tab-bar-background: rgba(19, 28, 46, 0.92);
+    --ion-overlay-background-color: #1c1c1e;
+    --ion-background-color: #000000;
+    --ion-background-color-rgb: 0, 0, 0;
+    --ion-text-color: #f5f5f7;
+    --ion-text-color-rgb: 245, 245, 247;
+    --ion-toolbar-background: #000000;
+    --ion-item-background: #1c1c1e;
+    --ion-card-background: #1c1c1e;
+    --ion-tab-bar-background: rgba(28, 28, 30, 0.92);
     --ion-border-color: rgba(255, 255, 255, 0.08);
 
-    --ion-color-primary: #2dd4bf;
-    --ion-color-primary-rgb: 45, 212, 191;
-    --ion-color-primary-contrast: #042f2e;
-    --ion-color-primary-contrast-rgb: 4, 47, 46;
-    --ion-color-primary-shade: #28bba8;
-    --ion-color-primary-tint: #42d8c5;
+    --ion-color-primary: #f5f5f7;
+    --ion-color-primary-rgb: 245, 245, 247;
+    --ion-color-primary-contrast: #111111;
+    --ion-color-primary-contrast-rgb: 17, 17, 17;
+    --ion-color-primary-shade: #d8d8da;
+    --ion-color-primary-tint: #ffffff;
 
     --ion-color-secondary: #fb923c;
     --ion-color-secondary-rgb: 251, 146, 60;
@@ -94,10 +95,10 @@
     --ion-color-danger-contrast: #1f0505;
     --ion-color-danger-contrast-rgb: 31, 5, 5;
 
-    --app-surface: #131c2e;
-    --app-surface-2: #1b2539;
+    --app-surface: #1c1c1e;
+    --app-surface-2: #2c2c2e;
     --app-line: rgba(255, 255, 255, 0.08);
-    --app-muted: #97a3b6;
+    --app-muted: #8e8e93;
     --app-shadow: none;
   }
 }

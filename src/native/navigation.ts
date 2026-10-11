@@ -16,7 +16,10 @@ type ChromeState = {
   syncOn: Ref<boolean>
 }
 
-const tint = '#14b8a6'
+// Native bars follow the neutral ink of the web UI: black in light mode, white in dark mode.
+const darkScheme = window.matchMedia('(prefers-color-scheme: dark)')
+const dark = ref(darkScheme.matches)
+darkScheme.addEventListener('change', (event) => (dark.value = event.matches))
 const overlayEvents = ['Modal', 'Alert', 'ActionSheet', 'Popover', 'Picker']
 
 // Ionicons ship as data URLs styled by CSS classes; inline those styles for native rendering.
@@ -54,7 +57,7 @@ export function useNativeChrome(state: ChromeState, onTab: (tab: ChromeTab) => v
       document.addEventListener(`ion${name}WillPresent`, onPresent)
       document.addEventListener(`ion${name}WillDismiss`, onDismiss)
     }
-    await NativeNavigation.configure({ contentInsetMode: 'css', platformStyle: 'auto', colors: { tint } })
+    await NativeNavigation.configure({ contentInsetMode: 'css', platformStyle: 'auto' })
     listeners.push(
       await NativeNavigation.addListener('tabSelect', ({ id }) => onTab(id as ChromeTab)),
       await NativeNavigation.addListener('navbarItemTap', ({ id }) => id === 'sync' && onTab('sync')),
@@ -70,6 +73,7 @@ export function useNativeChrome(state: ChromeState, onTab: (tab: ChromeTab) => v
   })
 
   watchEffect(() => {
+    const tint = dark.value ? '#ffffff' : '#111111'
     const hidden = !state.visible.value || overlays.value > 0
     void NativeNavigation.setNavbar({
       hidden,

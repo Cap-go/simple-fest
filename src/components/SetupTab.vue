@@ -115,7 +115,7 @@ async function confirmRemoveMode(id: string, label: string) {
     <IonAccordionGroup class="inset-accordion">
       <IonAccordion v-for="service in db.schema.services" :key="service.id" :value="service.id">
         <IonItem slot="header">
-          <IonIcon slot="start" :icon="serviceIcon(service.kind)" color="primary" aria-hidden="true" />
+          <IonIcon slot="start" :icon="serviceIcon(service.kind)" color="medium" aria-hidden="true" />
           <IonLabel>
             <h3>{{ service.label }}</h3>
             <p>{{ statFor(service.id)?.scanned ?? 0 }} of {{ statFor(service.id)?.eligible ?? 0 }} used</p>
@@ -182,11 +182,11 @@ async function confirmRemoveMode(id: string, label: string) {
     <h2 class="section-title">Data</h2>
     <IonList class="inset" lines="full">
       <IonItem button @click="exportCsv">
-        <IonIcon slot="start" :icon="downloadOutline" color="primary" aria-hidden="true" />
+        <IonIcon slot="start" :icon="downloadOutline" color="medium" aria-hidden="true" />
         <IonLabel>Export scans as CSV</IonLabel>
       </IonItem>
       <IonItem button @click="emit('import')">
-        <IonIcon slot="start" :icon="cloudUploadOutline" color="primary" aria-hidden="true" />
+        <IonIcon slot="start" :icon="cloudUploadOutline" color="medium" aria-hidden="true" />
         <IonLabel>Import a new guest list</IonLabel>
       </IonItem>
       <IonItem button @click="downloadExampleCsv">
@@ -199,7 +199,7 @@ async function confirmRemoveMode(id: string, label: string) {
     <IonAccordionGroup class="inset-accordion">
       <IonAccordion value="ai">
         <IonItem slot="header">
-          <IonIcon slot="start" :icon="sparklesOutline" color="secondary" aria-hidden="true" />
+          <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
           <IonLabel>OpenAI-compatible API</IonLabel>
           <IonNote slot="end">{{ settings.apiKey ? 'On' : 'Off' }}</IonNote>
         </IonItem>
