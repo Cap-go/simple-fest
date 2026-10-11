@@ -10,7 +10,9 @@ const { db, busy, syncStatus, syncInviteText, syncQr, hostSync, joinFromText, st
 const joinCode = ref('')
 const active = computed(() => syncStatus.value.mode !== 'off')
 const statusTone = computed(() =>
-  syncStatus.value.mode === 'error' ? 'danger' : syncStatus.value.mode === 'off' ? 'medium' : syncStatus.value.mode === 'joining' ? 'warning' : 'success',
+  ({ off: 'medium', error: 'danger', joining: 'warning', reconnecting: 'warning', paused: 'warning', hosting: 'success', connected: 'success' } as const)[
+    syncStatus.value.mode
+  ],
 )
 
 async function copyInvite() {

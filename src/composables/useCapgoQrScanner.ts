@@ -1,5 +1,6 @@
 import { CameraPreview, type BarcodeScannedEvent } from '@capgo/camera-preview'
-import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core'
 import { nextTick, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
 
 type ScannerSource = Ref<boolean> | ComputedRef<boolean>
@@ -55,7 +56,7 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
         return
       }
 
-      if (!enabled.value || document.hidden) {
+      if (!enabled.value || document.hidden || active.value) {
         return
       }
 
@@ -137,9 +138,19 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
     }
   }
 
+  // Release the camera when the phone locks or the app is backgrounded, and reopen it on return.
   document.addEventListener('visibilitychange', onVisibilityChange)
+  const appListeners: Promise<PluginListenerHandle>[] = Capacitor.isNativePlatform()
+    ? [
+        App.addListener('pause', () => void stop()),
+        App.addListener('resume', () => {
+          if (enabled.value) void start()
+        }),
+      ]
+    : []
   onBeforeUnmount(() => {
     document.removeEventListener('visibilitychange', onVisibilityChange)
+    for (const listener of appListeners) void listener.then((handle) => handle.remove())
     void stop()
   })
 

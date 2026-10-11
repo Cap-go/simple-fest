@@ -31,14 +31,22 @@ const socketOpen = 1
 const deployedSyncBackendUrl = 'https://simple-festival-sync.digitalshift-ee.workers.dev'
 const defaultSyncStatus: SyncStatus = { mode: 'off', peers: 0, message: 'Sync off' }
 
+export type SyncSession = { invite: SyncInvite; role: 'host' | 'peer'; deviceId?: string }
+
+// Reconnect delays after an unexpected disconnect (network drop, app suspended by the OS).
+const reconnectDelaysMs = [1000, 2000, 5000, 10000, 30000]
+
 export class SyncController {
   private socket: SyncSocket | null = null
-  private invite: SyncInvite | null = null
+  private session: SyncSession | null = null
   private handlers: SyncHandlers
   private backendUrl: string
   private createSocket: (url: string) => SyncSocket
   private status: SyncStatus = defaultSyncStatus
   private closing = false
+  private paused = false
+  private attempts = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined
 
   constructor(handlers: SyncHandlers, options: SyncControllerOptions = {}) {
     this.handlers = handlers
@@ -46,9 +54,11 @@ export class SyncController {
     this.createSocket = options.createSocket ?? ((url) => new WebSocket(url))
   }
 
+  get currentSession() {
+    return this.session
+  }
+
   async host(db: FestivalDb): Promise<SyncInvite> {
-    this.close()
-    const secret = randomSecret()
     const invite: SyncInvite = {
       type: 'simple-festival-sync',
       version: 1,
@@ -57,75 +67,140 @@ export class SyncController {
       backendUrl: this.backendUrl,
       festivalId: db.id,
       festivalName: db.name,
-      secret,
+      secret: randomSecret(),
       createdAt: new Date().toISOString(),
     }
-
-    this.invite = invite
-    this.setStatus({ mode: 'hosting', peers: 0, message: 'Starting device sync' })
-    this.socket = this.openSocket(invite, 'host')
+    this.start({ invite, role: 'host' })
     return invite
   }
 
   async join(invite: SyncInvite, deviceId: string) {
-    this.close()
-    this.invite = invite
-    this.setStatus({ mode: 'joining', peers: 0, message: 'Joining host device' })
-    this.socket = this.openSocket(invite, 'peer', deviceId)
+    this.start({ invite, role: 'peer', deviceId })
+  }
+
+  // Reopens a session saved before the app was closed or suspended.
+  restore(session: SyncSession) {
+    this.start(session)
+  }
+
+  // Called when the app goes to the background: drop the socket but keep the session.
+  pause() {
+    if (!this.session || this.paused) {
+      return
+    }
+    this.paused = true
+    this.disconnect()
+    this.setStatus({ mode: 'paused', peers: 0, message: 'Sync paused' })
+  }
+
+  // Called when the app comes back: reconnect and catch up.
+  resume() {
+    if (!this.session || !this.paused) {
+      return
+    }
+    this.paused = false
+    this.attempts = 0
+    this.connect()
   }
 
   broadcastSnapshot() {
     const db = this.handlers.getDatabase()
-    if (!db || !this.invite) {
+    if (!db || !this.session) {
       return
     }
-    this.send({ kind: 'snapshot', secret: this.invite.secret, db })
+    this.send({ kind: 'snapshot', secret: this.session.invite.secret, db })
   }
 
   broadcastScanEvent(event: ScanEvent) {
-    if (!this.invite) {
+    if (!this.session) {
       return
     }
-    this.send({ kind: 'scan-event', secret: this.invite.secret, event })
+    this.send({ kind: 'scan-event', secret: this.session.invite.secret, event })
   }
 
   close() {
-    this.closing = true
-    this.socket?.close()
-    this.socket = null
-    this.invite = null
-    this.closing = false
+    this.disconnect()
+    this.session = null
+    this.paused = false
     this.setStatus(defaultSyncStatus)
   }
 
-  private openSocket(invite: SyncInvite, role: 'host' | 'peer', deviceId?: string) {
+  private start(session: SyncSession) {
+    this.close()
+    this.session = session
+    this.attempts = 0
+    this.setStatus(
+      session.role === 'host'
+        ? { mode: 'hosting', peers: 0, message: 'Starting device sync' }
+        : { mode: 'joining', peers: 0, message: 'Joining host device' },
+    )
+    this.connect()
+  }
+
+  private connect() {
+    const session = this.session
+    if (!session || this.paused) {
+      return
+    }
+    clearTimeout(this.reconnectTimer)
+    const { invite, role, deviceId } = session
     const socket = this.createSocket(syncWebSocketUrl(invite, role, deviceId))
+    this.socket = socket
     socket.onopen = () => {
-      this.setStatus({ mode: role === 'host' ? 'hosting' : 'connected', peers: this.status.peers, message: role === 'host' ? 'Hosting device sync' : 'Connected to host' })
+      this.attempts = 0
+      this.setStatus({
+        mode: role === 'host' ? 'hosting' : 'connected',
+        peers: this.status.peers,
+        message: role === 'host' ? 'Hosting device sync' : 'Connected to host',
+      })
       this.send({ kind: 'hello', secret: invite.secret, deviceId: deviceId ?? 'host' })
       if (role === 'host') {
         this.broadcastSnapshot()
-      } else {
-        this.send({ kind: 'request-snapshot', secret: invite.secret })
+        return
+      }
+      this.send({ kind: 'request-snapshot', secret: invite.secret })
+      // Replay scans made while disconnected; receivers ignore events they already have.
+      for (const event of this.handlers.getDatabase()?.events ?? []) {
+        this.broadcastScanEvent(event)
       }
     }
     socket.onmessage = (event) => {
       this.handleMessage(event.data)
     }
     socket.onclose = () => {
-      if (!this.closing) {
-        this.setStatus({ mode: 'off', peers: 0, message: role === 'host' ? 'Device sync stopped' : 'Disconnected from host' })
+      if (this.socket !== socket || this.closing || this.paused || !this.session) {
+        return
       }
+      this.socket = null
+      this.scheduleReconnect()
     }
     socket.onerror = () => {
-      this.setStatus({ mode: 'error', peers: this.status.peers, message: 'Device sync error' })
+      // onclose follows and schedules the reconnect.
     }
-    return socket
+  }
+
+  private scheduleReconnect() {
+    const delay = reconnectDelaysMs[Math.min(this.attempts, reconnectDelaysMs.length - 1)]
+    this.attempts += 1
+    this.setStatus({
+      mode: 'reconnecting',
+      peers: 0,
+      message: this.session?.role === 'host' ? 'Reconnecting. Scans are saved on this phone.' : 'Reconnecting to host. Scans are saved on this phone.',
+    })
+    this.reconnectTimer = setTimeout(() => this.connect(), delay)
+  }
+
+  private disconnect() {
+    clearTimeout(this.reconnectTimer)
+    this.closing = true
+    this.socket?.close()
+    this.socket = null
+    this.closing = false
   }
 
   private handleMessage(data: unknown) {
     const message = parseIncomingMessage(data)
-    if (!message || !this.invite || message.secret !== this.invite.secret) {
+    if (!message || !this.session || message.secret !== this.session.invite.secret) {
       return
     }
 

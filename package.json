@@ -25,6 +25,7 @@
     "worker:types": "bunx wrangler@latest types worker/src/worker-configuration.d.ts"
   },
   "dependencies": {
+    "@capacitor/app": "latest",
     "@capacitor/clipboard": "latest",
     "@capacitor/core": "latest",
     "@capacitor/filesystem": "latest",

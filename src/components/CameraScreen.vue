@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core'
 import { IonButton, IonIcon } from '@ionic/vue'
 import { arrowForward, chevronBack, keypadOutline } from 'ionicons/icons'
 import { useCapgoQrScanner } from '../composables/useCapgoQrScanner'
@@ -33,18 +34,25 @@ const hint = computed(() => {
   return scanner.active.value ? 'Point at a ticket QR code' : 'Starting camera…'
 })
 
-onMounted(() => {
+let resumeListener: PluginListenerHandle | undefined
+
+onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
     document.documentElement.classList.add('camera-active')
   }
   ready.value = true
   void setScreenAwake(true)
+  if (Capacitor.isNativePlatform()) {
+    // iOS can drop the keep-awake flag while the app is in the background.
+    resumeListener = await App.addListener('resume', () => void setScreenAwake(true))
+  }
 })
 
 onBeforeUnmount(() => {
   document.documentElement.classList.remove('camera-active')
   window.clearTimeout(resetTimer)
   void setScreenAwake(false)
+  void resumeListener?.remove()
 })
 
 async function onScanned(value: string) {

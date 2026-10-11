@@ -1,7 +1,20 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { toDataURL } from 'qrcode'
 import { exportDatabaseCsv, importExample, importFile, importSheetUrl } from '../domain/fileImport'
-import { clearDatabase, getDeviceId, loadAiSettings, loadDatabase, saveAiSettings, saveDatabase } from '../domain/localStore'
+import {
+  clearDatabase,
+  getDeviceId,
+  loadActiveMode,
+  loadAiSettings,
+  loadDatabase,
+  loadSyncSession,
+  saveActiveMode,
+  saveAiSettings,
+  saveDatabase,
+  saveSyncSession,
+} from '../domain/localStore'
 import { applyScan, mergeRemoteScanEvent, serviceStats } from '../domain/scanEngine'
 import { SyncController, decodeInvite, encodeInvite } from '../domain/syncTransport'
 import type { AiSettings, FestivalDb, ScanResult, ScanService, SchemaMapping, SyncInvite, SyncStatus } from '../domain/types'
@@ -14,7 +27,11 @@ const deviceId = getDeviceId()
 const db = ref<FestivalDb | null>(loadDatabase())
 const settings = ref<AiSettings>(loadAiSettings())
 const busy = ref(false)
-const activeServiceId = ref<string | null>(db.value?.schema.services[0]?.id ?? null)
+const savedMode = loadActiveMode()
+const activeServiceId = ref<string | null>(
+  db.value?.schema.services.find((service) => service.id === savedMode)?.id ?? db.value?.schema.services[0]?.id ?? null,
+)
+watch(activeServiceId, saveActiveMode)
 const lastResult = ref<ScanResult | null>(null)
 const scanLog = ref<ScanLogEntry[]>([])
 const syncStatus = ref<SyncStatus>({ mode: 'off', peers: 0, message: 'Sync off' })
@@ -45,8 +62,31 @@ const sync = new SyncController({
   },
   onStatus: (status) => {
     syncStatus.value = status
+    saveSyncSession(sync.currentSession)
   },
 })
+
+restoreSyncSession()
+
+// Phones lock and switch apps mid-event: pause sync in the background and catch up on return.
+if (Capacitor.isNativePlatform()) {
+  void App.addListener('pause', () => sync.pause())
+  void App.addListener('resume', () => sync.resume())
+}
+
+function restoreSyncSession() {
+  const saved = loadSyncSession()
+  if (!saved || (saved.role === 'host' && db.value?.id !== saved.invite.festivalId)) {
+    saveSyncSession(null)
+    return
+  }
+  syncInvite.value = saved.invite
+  syncInviteText.value = encodeInvite(saved.invite)
+  if (saved.role === 'host') {
+    void toDataURL(syncInviteText.value, { width: 560, margin: 1, errorCorrectionLevel: 'M' }).then((qr) => (syncQr.value = qr))
+  }
+  sync.restore(saved)
+}
 
 function statFor(serviceId?: string) {
   return serviceId ? stats.value.find((item) => item.serviceId === serviceId) : undefined

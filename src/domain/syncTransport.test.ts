@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SyncController, decodeInvite, encodeInvite } from './syncTransport'
 import type { FestivalDb, ScanEvent, SyncInvite, SyncMessage, SyncStatus } from './types'
 
@@ -152,5 +152,76 @@ describe('SyncController', () => {
     expect(snapshots).toEqual([db])
     expect(scanEvents).toEqual([scanEvent])
     expect(socket?.sent.at(-1)).toEqual({ kind: 'scan-event', secret: invite.secret, event: scanEvent })
+  })
+
+  describe('app lifecycle', () => {
+    const invite: SyncInvite = {
+      type: 'simple-festival-sync',
+      version: 1,
+      transport: 'cloudflare',
+      roomId: 'room-2',
+      backendUrl: 'https://sync.example.com',
+      festivalId: db.id,
+      festivalName: db.name,
+      secret: 'room-secret',
+      createdAt: db.createdAt,
+    }
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('reconnects after an unexpected disconnect', () => {
+      vi.useFakeTimers()
+      const { controller, statuses } = createController()
+      controller.restore({ invite, role: 'host' })
+      FakeSocket.instances[0]?.open()
+
+      FakeSocket.instances[0]?.close()
+      expect(statuses.at(-1)?.mode).toBe('reconnecting')
+      expect(FakeSocket.instances).toHaveLength(1)
+
+      vi.advanceTimersByTime(1000)
+      expect(FakeSocket.instances).toHaveLength(2)
+      FakeSocket.instances[1]?.open()
+      expect(statuses.at(-1)?.mode).toBe('hosting')
+      expect(FakeSocket.instances[1]?.sent.map((message) => message.kind)).toEqual(['hello', 'snapshot'])
+    })
+
+    it('pauses in the background, resumes on return, and replays offline scans', () => {
+      vi.useFakeTimers()
+      const offlineDb = { ...db, events: [scanEvent] }
+      FakeSocket.instances = []
+      const statuses: SyncStatus[] = []
+      const controller = new SyncController(
+        { getDatabase: () => offlineDb, onSnapshot: () => undefined, onScanEvent: () => undefined, onStatus: (status) => statuses.push(status) },
+        { backendUrl: 'https://sync.example.com', createSocket: (url) => new FakeSocket(url) as unknown as WebSocket },
+      )
+      controller.restore({ invite, role: 'peer', deviceId: 'peer-device' })
+      FakeSocket.instances[0]?.open()
+
+      controller.pause()
+      expect(statuses.at(-1)?.mode).toBe('paused')
+      vi.advanceTimersByTime(60_000)
+      expect(FakeSocket.instances).toHaveLength(1)
+      expect(controller.currentSession?.invite.roomId).toBe('room-2')
+
+      controller.resume()
+      const socket = FakeSocket.instances[1]
+      socket?.open()
+      expect(statuses.at(-1)?.mode).toBe('connected')
+      expect(socket?.sent).toEqual([
+        { kind: 'hello', secret: invite.secret, deviceId: 'peer-device' },
+        { kind: 'request-snapshot', secret: invite.secret },
+        { kind: 'scan-event', secret: invite.secret, event: scanEvent },
+      ])
+    })
+
+    it('forgets the session when sync is stopped', () => {
+      const { controller } = createController()
+      controller.restore({ invite, role: 'host' })
+      controller.close()
+      expect(controller.currentSession).toBeNull()
+    })
   })
 })

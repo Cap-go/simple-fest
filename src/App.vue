@@ -26,7 +26,10 @@ const tabs = [
 ]
 const title = computed(() => (tab.value === 'scan' ? (db.value?.name ?? 'Simple Fest') : tab.value === 'sync' ? 'Devices' : 'Event'))
 const syncOn = computed(() => syncStatus.value.mode === 'hosting' || syncStatus.value.mode === 'connected')
-const syncLabel = computed(() => (syncOn.value ? (syncStatus.value.peers > 0 ? `${syncStatus.value.peers + 1} devices` : 'Live') : 'Offline'))
+const syncLabel = computed(() => {
+  if (syncOn.value) return syncStatus.value.peers > 0 ? `${syncStatus.value.peers + 1} devices` : 'Live'
+  return syncStatus.value.mode === 'reconnecting' || syncStatus.value.mode === 'paused' ? 'Reconnecting' : 'Offline'
+})
 
 useNativeChrome(
   { visible: computed(() => Boolean(db.value) && !camera.value), title, tab, syncLabel, syncOn },

@@ -97,7 +97,7 @@ export type SyncInvite = {
 }
 
 export type SyncStatus = {
-  mode: 'off' | 'hosting' | 'joining' | 'connected' | 'error'
+  mode: 'off' | 'hosting' | 'joining' | 'connected' | 'reconnecting' | 'paused' | 'error'
   peerId?: string
   peers: number
   message: string
