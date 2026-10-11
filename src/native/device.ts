@@ -6,6 +6,7 @@ import { Share } from '@capacitor/share'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { CapgoInAppReview } from '@capgo/capacitor-in-app-review'
+import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { KeepAwake } from '@capgo/capacitor-keep-awake'
 import { NativeAudio } from '@capgo/native-audio'
 import { toastController } from '@ionic/vue'
@@ -141,4 +142,16 @@ export async function maybeRequestReview(acceptedScans: number) {
   }
   localStorage.setItem(reviewKey, new Date().toISOString())
   await CapgoInAppReview.requestReview().catch(() => undefined)
+}
+
+export type BuildInfo = { native: string; bundle: string }
+
+// Native store version plus the Capgo live update bundle currently running.
+export async function getBuildInfo(): Promise<BuildInfo> {
+  const web = import.meta.env.VITE_APP_VERSION as string
+  if (!isNative) {
+    return { native: web, bundle: web }
+  }
+  const { bundle, native } = await CapacitorUpdater.current()
+  return { native, bundle: bundle.version === 'builtin' ? native : bundle.version }
 }

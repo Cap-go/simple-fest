@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -18,6 +18,7 @@ import { add, cloudUploadOutline, downloadOutline, sparklesOutline, trashOutline
 import { useFestival, type RoleColumn } from '../composables/useFestival'
 import { downloadExampleCsv } from '../domain/sampleSheet'
 import type { ScanKind } from '../domain/types'
+import { getBuildInfo, type BuildInfo } from '../native/device'
 import { kindOptions, serviceIcon } from '../ui'
 
 const emit = defineEmits<{ import: [] }>()
@@ -25,6 +26,10 @@ const { db, settings, statFor, exportCsv, resetDb, persistAiSettings, renameFest
   useFestival()
 
 const name = ref(db.value?.name ?? '')
+const build = ref<BuildInfo | null>(null)
+onMounted(async () => {
+  build.value = await getBuildInfo()
+})
 watch(
   () => db.value?.name,
   (value) => {
@@ -221,6 +226,18 @@ async function confirmRemoveMode(id: string, label: string) {
     <IonButton class="reset" expand="block" fill="outline" color="danger" @click="confirmReset">
       <IonIcon slot="start" :icon="trashOutline" aria-hidden="true" />Remove event from this phone
     </IonButton>
+
+    <footer class="about">
+      <img src="/app-icon.png" alt="" width="56" height="56" />
+      <p>
+        Version {{ build?.native }}<template v-if="build && build.bundle !== build.native"> · {{ build.bundle }}</template>
+      </p>
+      <p>Made by <a href="https://x.com/martindonadieu" target="_blank" rel="noopener">Martin Donadieu</a></p>
+      <p class="small">Built with Capacitor and shipped with Capgo live updates.</p>
+      <a class="capgo" href="https://capgo.app/?ref=simple-fest" target="_blank" rel="noopener">
+        <img src="/capgo.svg" alt="" width="28" height="28" />Made with Capgo
+      </a>
+    </footer>
   </div>
 </template>
 
@@ -289,6 +306,55 @@ ion-accordion ion-list {
 
 ion-item h3 {
   font-weight: 600;
+}
+
+.about {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 40px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.about img:first-child {
+  margin-bottom: 8px;
+  border-radius: 22.5%;
+}
+
+.about p {
+  margin: 0;
+}
+
+.about .small {
+  max-width: 280px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.about a {
+  color: var(--ion-text-color);
+}
+
+.about .capgo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 6px 16px 6px 6px;
+  border-radius: 99px;
+  background: var(--app-surface);
+  color: var(--ion-text-color);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.about .capgo img {
+  border-radius: 50%;
 }
 
 .reset {
