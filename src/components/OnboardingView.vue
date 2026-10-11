@@ -19,7 +19,7 @@ const steps = [
       <main class="onboarding page-width">
         <div class="intro">
           <header class="hero">
-            <img src="/icon.svg" alt="" width="88" height="88" />
+            <img src="/app-icon.png" alt="" width="88" height="88" />
             <h1>Simple Fest</h1>
             <p>Check tickets at the gate, the bar and the food stand from one spreadsheet.</p>
           </header>
@@ -74,8 +74,7 @@ const steps = [
 }
 
 .hero img {
-  border-radius: 22px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  border-radius: 22.5%;
 }
 
 .hero h1 {

@@ -1,10 +1,10 @@
 :root {
-  --ion-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --ion-background-color: #f4f6f8;
-  --ion-background-color-rgb: 244, 246, 248;
+  --ion-font-family: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --ion-background-color: #f2f2f7;
+  --ion-background-color-rgb: 242, 242, 247;
   --ion-text-color: #0f172a;
   --ion-text-color-rgb: 15, 23, 42;
-  --ion-toolbar-background: #f4f6f8;
+  --ion-toolbar-background: #f2f2f7;
   --ion-item-background: #ffffff;
   --ion-card-background: #ffffff;
   --ion-tab-bar-background: rgba(255, 255, 255, 0.92);
@@ -45,11 +45,11 @@
   --ion-color-danger-tint: #e03c3c;
 
   --app-surface: #ffffff;
-  --app-surface-2: #eef2f5;
+  --app-surface-2: #e9e9ef;
   --app-line: rgba(15, 23, 42, 0.08);
   --app-muted: #5b6678;
   --app-radius: 18px;
-  --app-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --app-shadow: none;
   --app-max: 720px;
 }
 
@@ -134,8 +134,6 @@ html.camera-active .camera-screen {
 .card {
   border-radius: var(--app-radius);
   background: var(--app-surface);
-  box-shadow: var(--app-shadow);
-  border: 1px solid var(--app-line);
 }
 
 .muted {
@@ -145,8 +143,6 @@ html.camera-active .camera-screen {
 ion-list.inset {
   margin: 0;
   border-radius: var(--app-radius);
-  border: 1px solid var(--app-line);
-  box-shadow: var(--app-shadow);
 }
 
 ion-button {

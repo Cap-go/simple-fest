@@ -4,6 +4,8 @@ const config: CapacitorConfig = {
   appId: 'ee.forgr.festivalscan',
   appName: 'Simple Fest',
   webDir: 'dist',
+  // Ionic scrolls inside ion-content; the page itself should not bounce like a website.
+  ios: { scrollEnabled: false },
   plugins: {
     CameraPreview: {
       disableAudio: true,

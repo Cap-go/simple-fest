@@ -159,8 +159,8 @@ const scenes = [
       await seedDemo(page)
       await page.getByPlaceholder(/ticket code/i).fill('TCK-1001')
       await page.getByPlaceholder(/ticket code/i).press('Enter')
-      await page.waitForSelector('.result-card')
-      await page.locator('.result-card').scrollIntoViewIfNeeded()
+      await page.waitForSelector('.scan-screen .last')
+      await page.locator('.scan-screen .last').scrollIntoViewIfNeeded()
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     },
   },
@@ -168,7 +168,7 @@ const scenes = [
     fileName: '04-camera-scan.png',
     prepare: async (page: Page) => {
       await seedDemo(page)
-      await page.getByRole('button', { name: /^Scan / }).first().click()
+      await page.locator('.scan-screen .hero').click()
       await page.waitForSelector('.camera-screen')
       const frame = await page.locator('.camera-screen .frame').boundingBox()
       const cameraFeed = await renderCameraFeed(page, frame)
@@ -295,7 +295,7 @@ async function seedDemo(page: Page) {
     { dbKey, deviceKey, demoDb },
   )
   await page.reload({ waitUntil: 'networkidle' })
-  await page.waitForSelector('.mode-card')
+  await page.waitForSelector('.scan-screen')
 }
 
 async function startVite(port: number) {

@@ -30,7 +30,7 @@ for (const file of ['guests.csv', 'guests.xlsx']) {
   await page.locator('input[type=file]').setInputFiles(`${dir}/${file}`)
   await page.getByRole('button', { name: 'Import', exact: true }).click()
   await page.waitForTimeout(1200)
-  console.log(file, '->', await page.locator('ion-title').first().innerText(), '| modes:', await page.locator('.mode-card').count())
+  console.log(file, '->', await page.locator('ion-title').first().innerText(), '| modes:', await page.locator('.modes button').count())
 }
 
 await openImport(page)
@@ -46,7 +46,7 @@ console.log('url ->', await page.locator('ion-title').first().innerText())
 await page.getByRole('radio', { name: /Saturday day pass/ }).click()
 await page.getByPlaceholder(/ticket code/i).fill('TCK-1002')
 await page.getByPlaceholder(/ticket code/i).press('Enter')
-console.log('not entitled ->', await page.locator('.result-card strong').innerText())
+console.log('not entitled ->', await page.locator('.scan-screen .last strong').innerText())
 
 await page.getByRole('button', { name: 'Event', exact: true }).click()
 const download = page.waitForEvent('download')

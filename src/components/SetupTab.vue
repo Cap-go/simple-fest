@@ -279,9 +279,7 @@ async function confirmRemoveMode(id: string, label: string) {
 
 .inset-accordion {
   overflow: hidden;
-  border: 1px solid var(--app-line);
   border-radius: var(--app-radius);
-  box-shadow: var(--app-shadow);
 }
 
 ion-accordion ion-list {

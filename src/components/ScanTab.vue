@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { IonButton, IonIcon, IonItem, IonLabel, IonList, IonNote } from '@ionic/vue'
-import { arrowForward, scanOutline } from 'ionicons/icons'
+import { computed, ref } from 'vue'
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonNote, IonTitle, IonToolbar } from '@ionic/vue'
+import { arrowForward, chevronForward, scan } from 'ionicons/icons'
 import { useFestival } from '../composables/useFestival'
 import { tapFeedback } from '../native/device'
 import { serviceIcon, statusMeta, timeLabel } from '../ui'
-import ResultCard from './ResultCard.vue'
 
 const emit = defineEmits<{ scan: [] }>()
-const { db, activeServiceId, activeService, statFor, handleScan, lastResult, scanLog } = useFestival()
+const { db, activeServiceId, activeService, activeServiceStat, statFor, handleScan, scanLog } = useFestival()
 const manualCode = ref('')
+const recentOpen = ref(false)
+
+const ring = 2 * Math.PI * 54
+const progress = computed(() => {
+  const stat = activeServiceStat.value
+  return stat && stat.eligible > 0 ? Math.min(1, stat.scanned / stat.eligible) : 0
+})
+const latest = computed(() => scanLog.value[0])
 
 function selectMode(id: string) {
   activeServiceId.value = id
@@ -23,63 +30,76 @@ function submitManual() {
     manualCode.value = ''
   }
 }
-
-function progress(id: string) {
-  const stat = statFor(id)
-  return stat && stat.eligible > 0 ? Math.min(100, Math.round((stat.scanned / stat.eligible) * 100)) : 0
-}
 </script>
 
 <template>
-  <div v-if="db" class="scan-tab">
-    <section class="pane-main">
-      <h2 id="modes-title" class="section-title">Scan mode</h2>
-      <div class="mode-grid" role="radiogroup" aria-labelledby="modes-title">
-        <button
-          v-for="service in db.schema.services"
-          :key="service.id"
-          :class="['mode-card', { active: activeService?.id === service.id }]"
-          type="button"
-          role="radio"
-          :aria-checked="activeService?.id === service.id"
-          @click="selectMode(service.id)"
-        >
-          <span class="mode-icon"><IonIcon :icon="serviceIcon(service.kind)" aria-hidden="true" /></span>
-          <strong>{{ service.label }}</strong>
-          <span class="mode-count">{{ statFor(service.id)?.scanned ?? 0 }} / {{ statFor(service.id)?.eligible ?? 0 }}</span>
-          <span class="bar" aria-hidden="true"><span :style="{ width: `${progress(service.id)}%` }" /></span>
+  <div v-if="db" class="scan-screen">
+    <nav class="modes" role="radiogroup" aria-label="Scan mode">
+      <button
+        v-for="service in db.schema.services"
+        :key="service.id"
+        type="button"
+        role="radio"
+        :aria-checked="activeService?.id === service.id"
+        :class="{ active: activeService?.id === service.id }"
+        @click="selectMode(service.id)"
+      >
+        <IonIcon :icon="serviceIcon(service.kind)" aria-hidden="true" />
+        <span>{{ service.label }}</span>
+        <small>{{ statFor(service.id)?.scanned ?? 0 }}/{{ statFor(service.id)?.eligible ?? 0 }}</small>
+      </button>
+    </nav>
+    <p v-if="!db.schema.services.length" class="empty">No scan modes yet. Add one in the Event tab.</p>
+
+    <div class="stage">
+      <button class="hero" type="button" :disabled="!activeService" @click="emit('scan')">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" class="track" />
+          <circle cx="60" cy="60" r="54" class="value" :stroke-dasharray="ring" :stroke-dashoffset="ring * (1 - progress)" />
+        </svg>
+        <span class="hero-center">
+          <IonIcon :icon="activeService ? serviceIcon(activeService.kind) : scan" aria-hidden="true" />
+          <strong>{{ activeServiceStat?.scanned ?? 0 }}<small> / {{ activeServiceStat?.eligible ?? 0 }}</small></strong>
+          <span>{{ activeService?.label ?? 'Scan' }}</span>
+        </span>
+        <span class="cta"><IonIcon :icon="scan" aria-hidden="true" />Tap to scan</span>
+      </button>
+
+      <div class="side">
+        <button v-if="latest" type="button" :class="['last', statusMeta(latest.status).tone]" aria-live="polite" @click="recentOpen = true">
+          <IonIcon :icon="statusMeta(latest.status).icon" aria-hidden="true" />
+          <span>
+            <strong>{{ latest.title }}</strong>
+            <small>{{ latest.guest ?? latest.payload }} · {{ latest.serviceLabel }}</small>
+          </span>
+          <IonIcon class="chevron" :icon="chevronForward" aria-hidden="true" />
         </button>
+
+        <form class="manual" @submit.prevent="submitManual">
+          <input
+            v-model="manualCode"
+            aria-label="Ticket code or email"
+            autocomplete="off"
+            autocapitalize="characters"
+            enterkeyhint="go"
+            placeholder="Type ticket code or email"
+          />
+          <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check ticket">
+            <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
+          </IonButton>
+        </form>
       </div>
-      <p v-if="!db.schema.services.length" class="muted empty">No scan modes yet. Add one in the Event tab.</p>
+    </div>
 
-      <IonButton class="tall start" expand="block" :disabled="!activeService" @click="emit('scan')">
-        <IonIcon slot="start" :icon="scanOutline" aria-hidden="true" />
-        Scan {{ activeService?.label ?? 'tickets' }}
-      </IonButton>
-
-      <form class="manual card" @submit.prevent="submitManual">
-        <label for="manual-code" class="sr-only">Ticket code or email</label>
-        <input
-          id="manual-code"
-          v-model="manualCode"
-          autocomplete="off"
-          autocapitalize="characters"
-          enterkeyhint="go"
-          placeholder="Type ticket code or email"
-        />
-        <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check ticket">
-          <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
-        </IonButton>
-      </form>
-    </section>
-
-    <section class="pane-side">
-      <ResultCard v-if="lastResult" class="last" :result="lastResult" :db="db" :mode="activeService?.label" />
-
-      <template v-if="scanLog.length">
-        <h2 class="section-title">Recent scans</h2>
-        <IonList class="inset" lines="full">
-          <IonItem v-for="entry in scanLog.slice(0, 12)" :key="entry.id">
+    <IonModal :is-open="recentOpen" :initial-breakpoint="0.6" :breakpoints="[0, 0.6, 1]" @did-dismiss="recentOpen = false">
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Recent scans</IonTitle>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent>
+        <IonList lines="full">
+          <IonItem v-for="entry in scanLog" :key="entry.id">
             <IonIcon slot="start" :icon="statusMeta(entry.status).icon" :color="statusMeta(entry.status).tone" aria-hidden="true" />
             <IonLabel>
               <h3>{{ entry.guest ?? entry.payload }}</h3>
@@ -88,168 +108,250 @@ function progress(id: string) {
             <IonNote slot="end">{{ timeLabel(entry.at) }}</IonNote>
           </IonItem>
         </IonList>
-      </template>
-      <p v-if="!lastResult" class="side-empty muted">Scan results and recent scans appear here.</p>
-    </section>
+      </IonContent>
+    </IonModal>
   </div>
 </template>
 
 <style scoped>
-.scan-tab {
-  width: 100%;
-  max-width: var(--app-max);
-  margin: 0 auto;
-  padding: 0 max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+.scan-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0 12px;
 }
 
-.pane-main {
-  container-type: inline-size;
+.modes {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.side-empty {
+.modes::-webkit-scrollbar {
   display: none;
 }
 
-/* Wide windows (iPhone Duo inner display, tablets in landscape): two panes. */
-@media (min-width: 840px), (orientation: landscape) and (min-width: 640px) {
-  .scan-tab {
-    max-width: 1180px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: 28px;
-    align-items: start;
-  }
-
-  .pane-side {
-    position: sticky;
-    top: 0;
-    padding-top: 46px;
-  }
-
-  .last {
-    margin-top: 0;
-  }
-
-  .side-empty {
-    display: grid;
-    place-items: center;
-    min-height: 180px;
-    border: 2px dashed var(--app-line);
-    border-radius: var(--app-radius);
-    text-align: center;
-    padding: 24px;
-  }
-}
-
-.mode-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-@container (min-width: 560px) {
-  .mode-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.mode-card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    'icon count'
-    'label label'
-    'bar bar';
+.modes button {
+  flex: none;
+  display: inline-flex;
   align-items: center;
-  gap: 10px 8px;
-  min-height: 112px;
-  padding: 14px;
-  border: 2px solid var(--app-line);
-  border-radius: var(--app-radius);
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 99px;
   background: var(--app-surface);
-  box-shadow: var(--app-shadow);
   color: var(--ion-text-color);
   font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.mode-card:active {
-  transform: scale(0.98);
-}
-
-.mode-card.active {
-  border-color: var(--ion-color-primary);
-  background: rgba(var(--ion-color-primary-rgb), 0.08);
-}
-
-.mode-icon {
-  grid-area: icon;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: var(--app-surface-2);
+.modes button ion-icon {
   color: var(--ion-color-primary);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
-.active .mode-icon {
+.modes button small {
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.modes button.active {
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
 }
 
-.mode-card strong {
-  grid-area: label;
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.mode-count {
-  grid-area: count;
-  justify-self: end;
-  color: var(--app-muted);
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-.bar {
-  grid-area: bar;
-  height: 5px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: var(--app-surface-2);
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--ion-color-primary);
+.modes button.active ion-icon,
+.modes button.active small {
+  color: inherit;
 }
 
 .empty {
-  margin: 8px 4px;
+  margin: 0 16px;
+  color: var(--app-muted);
 }
 
-.start {
-  margin: 20px 0 12px;
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.hero {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 28px;
+  background: var(--app-surface);
+  color: var(--ion-text-color);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s;
+}
+
+.hero:active {
+  transform: scale(0.985);
+}
+
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: min(64%, 300px);
+  aspect-ratio: 1;
+  translate: -50% -56%;
+  rotate: -90deg;
+}
+
+.ring circle {
+  fill: none;
+  stroke-width: 7;
+}
+
+.ring .track {
+  stroke: var(--app-surface-2);
+}
+
+.ring .value {
+  stroke: var(--ion-color-primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.hero-center {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  translate: 0 -6%;
+}
+
+.hero-center ion-icon {
+  font-size: 1.8rem;
+  color: var(--ion-color-primary);
+}
+
+.hero-center strong {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-center strong small {
+  color: var(--app-muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.hero-center > span {
+  color: var(--app-muted);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.cta {
+  position: absolute;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 99px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-weight: 700;
+}
+
+.side {
+  flex: none;
+  display: grid;
+  gap: 12px;
+}
+
+.last {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--tone);
+  color: var(--tone-contrast);
+  font: inherit;
+  text-align: left;
+}
+
+.last.success {
+  --tone: var(--ion-color-success);
+  --tone-contrast: var(--ion-color-success-contrast);
+}
+
+.last.warning {
+  --tone: var(--ion-color-warning);
+  --tone-contrast: var(--ion-color-warning-contrast);
+}
+
+.last.danger {
+  --tone: var(--ion-color-danger);
+  --tone-contrast: var(--ion-color-danger-contrast);
+}
+
+.last > ion-icon:first-child {
+  flex: none;
+  font-size: 1.8rem;
+}
+
+.last span {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.last strong {
+  font-size: 1.05rem;
+}
+
+.last small {
+  overflow: hidden;
+  opacity: 0.9;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.last .chevron {
+  opacity: 0.7;
 }
 
 .manual {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 6px 6px 16px;
+  height: 52px;
+  padding: 0 6px 0 16px;
+  border-radius: 99px;
+  background: var(--app-surface);
 }
 
 .manual input {
   flex: 1;
   min-width: 0;
-  height: 44px;
+  height: 100%;
   border: 0;
   background: transparent;
   color: var(--ion-text-color);
@@ -260,28 +362,25 @@ function progress(id: string) {
 
 .manual ion-button {
   margin: 0;
-  --padding-start: 12px;
-  --padding-end: 12px;
 }
 
-.last {
-  margin-top: 16px;
+/* Wide windows (iPhone Duo inner display, iPad, landscape): hero beside the controls. */
+@media (min-width: 840px), (orientation: landscape) and (min-width: 640px) {
+  .stage {
+    flex-direction: row;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .side {
+    width: min(380px, 42%);
+    align-content: end;
+  }
 }
 
 ion-item ion-icon[slot='start'] {
   font-size: 1.6rem;
   margin-inline-end: 14px;
-}
-
-ion-item h3 {
-  font-weight: 600;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
 }
 </style>

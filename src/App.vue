@@ -78,7 +78,7 @@ function selectTab(next: Tab) {
 
       <!-- Web content scrolls in its own view, so iOS cannot draw its scroll-edge effect under native bars. -->
       <div v-if="nativeChrome" class="native-edge top" aria-hidden="true" />
-      <IonContent :class="{ 'native-insets': nativeChrome }">
+      <IonContent :class="{ 'native-insets': nativeChrome }" :scroll-y="tab !== 'scan'">
         <ScanTab v-if="tab === 'scan'" @scan="camera = 'scan'" />
         <SyncTab v-else-if="tab === 'sync'" @scan-invite="camera = 'join'" />
         <SetupTab v-else @import="importOpen = true" />
