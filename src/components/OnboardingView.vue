@@ -15,7 +15,8 @@ const steps = [
 
 <template>
   <IonPage>
-    <IonContent :fullscreen="true">
+    <!-- One fixed screen: no page scroll on first launch. -->
+    <IonContent :fullscreen="true" :scroll-y="false">
       <main class="onboarding page-width">
         <div class="intro">
           <header class="hero">
@@ -62,7 +63,8 @@ const steps = [
 
 <style scoped>
 .onboarding {
-  min-height: 100%;
+  box-sizing: border-box;
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding: calc(env(safe-area-inset-top) + 40px) max(24px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px)
@@ -198,6 +200,14 @@ const steps = [
     height: 38px;
     border-radius: 12px;
     font-size: 1.15rem;
+  }
+}
+
+/* Very short windows (iPhone Duo outer display in landscape): keep only the step titles. */
+@media (max-height: 560px) {
+  .hero p,
+  .steps p {
+    display: none;
   }
 }
 
