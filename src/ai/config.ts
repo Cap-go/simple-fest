@@ -15,7 +15,8 @@ export const OAUTH_SCOPES = ['openid', 'profile', 'email', 'offline_access', 're
 export const OAUTH_CALLBACK_PATH = '/auth/callback'
 
 export const RESPONSES_API_URL = 'https://api.openai.com/v1/responses'
-export const RESPONSES_MODEL = 'gpt-4.1'
+export const RESPONSES_MODEL = 'gpt-6.1-sol'
+export const MODELS_API_URL = 'https://api.openai.com/v1/models'
 
 export const SECURE_STORAGE_KEYS = {
   hostId: 'simple_fest_ext_agent_host_id',

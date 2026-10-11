@@ -1,7 +1,7 @@
 // Sign in with ChatGPT: PKCE + loopback redirect, tokens in Keychain/Keystore. Ported from
 // Cap-go/capgo-browser (src/auth/oauth.ts). Requests then run on the user's ChatGPT plan.
-import { Capacitor } from '@capacitor/core'
-import { InAppBrowser } from '@capgo/capacitor-inappbrowser'
+import { Capacitor, CapacitorHttp, type PluginListenerHandle } from '@capacitor/core'
+import { InAppBrowser, ToolBarType } from '@capgo/capacitor-inappbrowser'
 import { OAuthLoopback } from '@capgo/oauth-loopback'
 import {
   AGENT_NAME_HINT,
@@ -11,10 +11,12 @@ import {
   OAUTH_RESOURCE,
   OAUTH_SCOPES,
   OAUTH_TOKEN_URL,
+  MODELS_API_URL,
   RESPONSES_API_URL,
   RESPONSES_MODEL,
   SECURE_STORAGE_KEYS,
 } from './config'
+import { authRequest } from './http'
 import { verifyIdToken } from './idToken'
 import { createOAuthNonce, createOAuthState, createPkcePair, randomString } from './pkce'
 import { secureGet, secureRemove, secureSet } from './secureStorage'
@@ -61,15 +63,55 @@ export async function disconnectChatGpt() {
 // Sends one prompt and returns the model's text. Streaming and store:false are required for plan usage.
 export async function askChatGpt(instructions: string, input: string): Promise<string> {
   const accessToken = await validAccessToken()
-  const response = await fetch(RESPONSES_API_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: RESPONSES_MODEL, instructions, input, stream: true, store: false }),
-  })
-  if (!response.ok || !response.body) {
-    throw new Error(apiError(response.status, await response.text()))
+  const body = JSON.stringify({ model: await resolveModel(accessToken), instructions, input, stream: true, store: false })
+  // Native HTTP: the WebView turns API admission errors (no CORS headers) into opaque failures.
+  const response = await apiRequest(RESPONSES_API_URL, 'POST', accessToken, body)
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(apiError(response.status, response.text))
   }
-  return readStreamText(response.body)
+  const stream = new Response(response.text).body
+  if (!stream) throw new Error('ChatGPT returned no text')
+  return readStreamText(stream)
+}
+
+let cachedModel: { token: string; slug: string } | null = null
+
+// ChatGPT plans expose different models: use the preferred one when listed, else the first listed.
+async function resolveModel(accessToken: string) {
+  if (cachedModel?.token === accessToken) return cachedModel.slug
+  let slug = RESPONSES_MODEL
+  try {
+    const response = await apiRequest(MODELS_API_URL, 'GET', accessToken)
+    if (response.status === 200) {
+      const listed = ((JSON.parse(response.text) as { models?: { slug?: string; visibility?: string }[] }).models ?? []).filter(
+        (model) => model.slug && model.visibility === 'list',
+      )
+      slug = (listed.find((model) => model.slug === RESPONSES_MODEL) ?? listed[0])?.slug ?? slug
+    }
+  } catch {
+    // Keep the default model.
+  }
+  cachedModel = { token: accessToken, slug }
+  return slug
+}
+
+async function apiRequest(url: string, method: 'GET' | 'POST', accessToken: string, body?: string) {
+  const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` }
+  if (body) headers['Content-Type'] = 'application/json'
+  if (Capacitor.isNativePlatform()) {
+    const response = await CapacitorHttp.request({
+      url,
+      method,
+      headers,
+      data: body ? JSON.parse(body) : undefined,
+      responseType: 'text',
+      readTimeout: 180_000,
+      connectTimeout: 30_000,
+    })
+    return { status: response.status, text: typeof response.data === 'string' ? response.data : JSON.stringify(response.data ?? '') }
+  }
+  const response = await fetch(url, { method, headers, body })
+  return { status: response.status, text: await response.text() }
 }
 
 async function validAccessToken() {
@@ -152,25 +194,61 @@ function buildAuthorizeUrl(attempt: Attempt) {
   return `${OAUTH_AUTHORIZE_URL}?${params}`
 }
 
+// Mobile Safari user agent so identity providers (Google) accept the embedded login.
+const safariUserAgent =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+
+// OpenAI only accepts an http://127.0.0.1 redirect, which Safari flags as insecure. The login runs in an
+// in-app web view where 127.0.0.1 is a blocked host: the redirect is cancelled before it loads and the code
+// is read from its URL, so no http page is ever shown.
 async function authorizeInBrowser(attempt: Attempt, authorizeUrl: string): Promise<OAuthCallbackParams> {
-  try {
-    const { redirectedUri } = await InAppBrowser.openSecureWindow({
-      authEndpoint: authorizeUrl,
-      redirectUri: attempt.redirectUri,
-      prefersEphemeralWebBrowserSession: false,
-    })
-    const query = new URL(redirectedUri).searchParams
-    return {
-      code: query.get('code') ?? undefined,
-      state: query.get('state') ?? undefined,
-      clientId: query.get('client_id') ?? undefined,
-      error: query.get('error') ?? undefined,
-      errorDescription: query.get('error_description') ?? undefined,
+  const handles: PluginListenerHandle[] = []
+  let webViewId: string | undefined
+  let settled = false
+  const result = new Promise<OAuthCallbackParams>((resolve, reject) => {
+    const finish = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      fn()
     }
-  } catch {
-    // The system browser may hand the loopback URL to our listener instead of the auth session.
-    await InAppBrowser.open({ url: authorizeUrl })
-    return OAuthLoopback.waitForCallback({ sessionId: attempt.loopbackSessionId, timeoutMs: 300_000 })
+    void InAppBrowser.addListener('urlChangeEvent', (event) => {
+      if (webViewId && event.id && event.id !== webViewId) return
+      if (!event.url.startsWith(attempt.redirectUri)) return
+      finish(() => resolve(parseRedirect(event.url)))
+    }).then((handle) => handles.push(handle))
+    void InAppBrowser.addListener('closeEvent', (event) => {
+      if (webViewId && event.id && event.id !== webViewId) return
+      finish(() => reject(new Error('Sign in was cancelled')))
+    }).then((handle) => handles.push(handle))
+  })
+
+  try {
+    const opened = await InAppBrowser.openWebView({
+      url: authorizeUrl,
+      title: 'Sign in with ChatGPT',
+      toolbarType: ToolBarType.COMPACT,
+      blockedHosts: ['127.0.0.1'],
+      customUserAgent: safariUserAgent,
+      enabledSafeBottomMargin: true,
+      enabledSafeTopMargin: true,
+    })
+    webViewId = opened.id
+    return await result
+  } finally {
+    settled = true
+    await Promise.all(handles.map((handle) => handle.remove()))
+    await InAppBrowser.close(webViewId ? { id: webViewId } : undefined).catch(() => undefined)
+  }
+}
+
+function parseRedirect(url: string): OAuthCallbackParams {
+  const query = new URL(url).searchParams
+  return {
+    code: query.get('code') ?? undefined,
+    state: query.get('state') ?? undefined,
+    clientId: query.get('client_id') ?? undefined,
+    error: query.get('error') ?? undefined,
+    errorDescription: query.get('error_description') ?? undefined,
   }
 }
 
@@ -216,20 +294,17 @@ async function refresh(record: OAuthCredentialRecord) {
   return merged
 }
 
+// Token and JWKS endpoints reject WebView requests (CORS, Cloudflare), so they go through native HTTP.
 async function tokenRequest(fields: Record<string, string>): Promise<TokenResponse> {
-  const response = await fetch(OAUTH_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(fields),
-  })
-  if (!response.ok) throw new Error(`ChatGPT sign in failed (${response.status}): ${await response.text()}`)
-  return (await response.json()) as TokenResponse
+  const response = await authRequest(OAUTH_TOKEN_URL, { form: new URLSearchParams(fields) })
+  if (!response.ok) throw new Error(`ChatGPT sign in failed (${response.status}): ${response.text.slice(0, 300)}`)
+  return JSON.parse(response.text) as TokenResponse
 }
 
 async function credentialFromToken(token: TokenResponse, meta: { clientId: string; extAgentHostId: string; nonce: string }): Promise<OAuthCredentialRecord> {
   const scopes = (token.scope ?? '').split(/\s+/).filter(Boolean)
   if (!scopes.includes('chatgpt.tokens.use.direct')) throw new Error('ChatGPT plan usage was not granted')
-  const claims = await verifyIdToken(token.id_token, { clientId: meta.clientId, nonce: meta.nonce || undefined })
+  const claims = await verifyIdToken(token.id_token, { clientId: meta.clientId, nonce: meta.nonce || undefined, allowUnverifiedIfJwksUnavailable: true })
   const now = Date.now()
   return {
     email: typeof claims.email === 'string' ? claims.email : '',
