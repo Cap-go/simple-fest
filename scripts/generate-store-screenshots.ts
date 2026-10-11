@@ -161,6 +161,8 @@ const scenes = [
       await page.getByPlaceholder(/ticket code/i).press('Enter')
       await page.waitForSelector('.scan-screen .last')
       await page.locator('.scan-screen .last').scrollIntoViewIfNeeded()
+      // Let the progress ring finish animating.
+      await page.waitForTimeout(700)
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     },
   },

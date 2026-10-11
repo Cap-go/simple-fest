@@ -4,8 +4,8 @@ import { api, ok, type Json } from './client'
 
 const bundleId = process.env.BUNDLE_ID ?? 'ee.forgr.festivalscan'
 const app = (await ok('GET', `/v1/apps?filter[bundleId]=${bundleId}`)).data[0]
-const version = (await ok('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION`)).data[0]
-if (!version) throw new Error('No iOS version in PREPARE_FOR_SUBMISSION')
+const version = (await ok('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION,DEVELOPER_REJECTED,REJECTED,METADATA_REJECTED`)).data[0]
+if (!version) throw new Error('No editable iOS version')
 
 // Reuse an open draft submission so retries do not pile up.
 const open: Json[] = (await ok('GET', `/v1/apps/${app.id}/reviewSubmissions?filter[platform]=IOS&filter[state]=READY_FOR_REVIEW`)).data

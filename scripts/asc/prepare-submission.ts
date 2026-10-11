@@ -50,8 +50,8 @@ Microphone and location are never requested; the camera library references those
 
 const app = (await ok('GET', `/v1/apps?filter[bundleId]=${bundleId}`)).data[0]
 const appId: string = app.id
-const version = (await ok('GET', `/v1/apps/${appId}/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION`)).data[0]
-if (!version) throw new Error('No iOS version in PREPARE_FOR_SUBMISSION')
+const version = (await ok('GET', `/v1/apps/${appId}/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION,DEVELOPER_REJECTED,REJECTED,METADATA_REJECTED`)).data[0]
+if (!version) throw new Error('No editable iOS version')
 const info = (await ok('GET', `/v1/apps/${appId}/appInfos`)).data.find((item: Json) => item.attributes.state !== 'READY_FOR_DISTRIBUTION')
 const step = (label: string) => console.log(`✓ ${label}`)
 
