@@ -18,8 +18,8 @@ import {
   IonToolbar,
 } from '@ionic/vue'
 import { cloudUploadOutline, documentTextOutline, linkOutline, sparklesOutline } from 'ionicons/icons'
+import { shareExampleCsv } from '../native/device'
 import { useFestival } from '../composables/useFestival'
-import { downloadExampleCsv } from '../domain/sampleSheet'
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; imported: [] }>()
@@ -112,7 +112,7 @@ async function submit() {
               One row per guest with a ticket code, plus optional name, email, paid and one column per day, meal or drink quota.
               {{ chatGpt ? 'ChatGPT is connected for smarter detection.' : '' }}
             </p>
-            <IonButton fill="clear" size="small" @click="downloadExampleCsv">Download example CSV</IonButton>
+            <IonButton fill="clear" size="small" @click="shareExampleCsv">Download example CSV</IonButton>
           </div>
         </div>
       </div>

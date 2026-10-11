@@ -16,9 +16,8 @@ import {
 } from '@ionic/vue'
 import { add, cloudUploadOutline, downloadOutline, sparklesOutline, trashOutline, warningOutline } from 'ionicons/icons'
 import { useFestival, type RoleColumn } from '../composables/useFestival'
-import { downloadExampleCsv } from '../domain/sampleSheet'
 import type { ScanKind } from '../domain/types'
-import { getBuildInfo, type BuildInfo } from '../native/device'
+import { getBuildInfo, type BuildInfo, shareExampleCsv } from '../native/device'
 import { kindOptions, serviceIcon } from '../ui'
 
 const emit = defineEmits<{ import: [] }>()
@@ -194,7 +193,7 @@ async function confirmRemoveMode(id: string, label: string) {
         <IonIcon slot="start" :icon="cloudUploadOutline" color="medium" aria-hidden="true" />
         <IonLabel>Import a new guest list</IonLabel>
       </IonItem>
-      <IonItem button @click="downloadExampleCsv">
+      <IonItem button @click="shareExampleCsv">
         <IonIcon slot="start" :icon="downloadOutline" color="medium" aria-hidden="true" />
         <IonLabel>Download example CSV</IonLabel>
       </IonItem>

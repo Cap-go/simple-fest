@@ -11,6 +11,7 @@ import { KeepAwake } from '@capgo/capacitor-keep-awake'
 import { NativeAudio } from '@capgo/native-audio'
 import { toastController } from '@ionic/vue'
 import { alertCircle, checkmarkCircle, informationCircle, warning } from 'ionicons/icons'
+import { exampleCsv } from '../domain/sampleSheet'
 import type { ScanStatus } from '../domain/types'
 
 const isNative = Capacitor.isNativePlatform()
@@ -154,4 +155,15 @@ export async function getBuildInfo(): Promise<BuildInfo> {
   }
   const { bundle, native } = await CapacitorUpdater.current()
   return { native, bundle: bundle.version === 'builtin' ? native : bundle.version }
+}
+
+// Blob downloads do nothing in the native web view: write the file and open the share sheet instead.
+export async function shareExampleCsv() {
+  try {
+    await saveCsv('simple-fest-template.csv', exampleCsv())
+  } catch (error) {
+    if (!(error instanceof Error && /cancel/i.test(error.message))) {
+      notify('error', 'Could not export the example', error instanceof Error ? error.message : undefined)
+    }
+  }
 }
