@@ -27,6 +27,7 @@ const plan: Placement[] = [
       `${shots}/iphone-duo-outer-landscape/03-scan-result.png`,
     ],
   },
+  { type: 'APP_SCREENSHOT', group: 'IPAD_13_PROFILE', files: scenes.map((s) => `${shots}/ipad-13/${s}.png`) },
   { type: 'PRODUCT_PAGE_HEADER_ASSET', group: 'DEFAULT_PROFILE', files: ['store/creative/product-page-header-21x9.png'] },
   { type: 'APP_STORE_SEARCH_RESULTS_ASSET', group: 'DEFAULT_PROFILE', files: ['store/creative/search-results-3x2.png'] },
 ]

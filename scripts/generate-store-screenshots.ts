@@ -24,6 +24,7 @@ const targets: Target[] = [
   { name: 'iphone-duo-outer-landscape', directory: 'store/screenshots/iphone-duo-outer-landscape', width: 678, height: 466, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-inner-portrait', directory: 'store/screenshots/iphone-duo-inner-portrait', width: 669, height: 951, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-inner-landscape', directory: 'store/screenshots/iphone-duo-inner-landscape', width: 951, height: 669, deviceScaleFactor: 3, ios: true },
+  { name: 'ipad-13', directory: 'store/screenshots/ipad-13', width: 1032, height: 1376, deviceScaleFactor: 2, ios: true },
   { name: 'android-phone', directory: 'store/screenshots/android-phone', width: 360, height: 640, deviceScaleFactor: 3, ios: false },
 ]
 const only = process.env.ONLY?.split(',')
