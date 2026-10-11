@@ -19,7 +19,7 @@ const steps = [
       <main class="onboarding page-width">
         <div class="intro">
           <header class="hero">
-            <img src="/app-icon.png" alt="" width="88" height="88" />
+            <img class="app-icon" src="/app-icon.png" alt="" width="88" height="88" />
             <h1>Simple Fest</h1>
             <p>Check tickets at the gate, the bar and the food stand from one spreadsheet.</p>
           </header>

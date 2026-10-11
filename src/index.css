@@ -137,6 +137,12 @@ html.camera-active .camera-screen {
   background: var(--app-surface);
 }
 
+/* The app icon is black: keep its edge visible on dark backgrounds. */
+.app-icon {
+  border-radius: 22.5%;
+  box-shadow: 0 0 0 1px rgba(var(--ion-text-color-rgb), 0.12);
+}
+
 .muted {
   color: var(--app-muted);
 }

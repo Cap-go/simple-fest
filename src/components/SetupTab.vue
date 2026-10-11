@@ -228,7 +228,7 @@ async function confirmRemoveMode(id: string, label: string) {
     </IonButton>
 
     <footer class="about">
-      <img src="/app-icon.png" alt="" width="56" height="56" />
+      <img class="app-icon" src="/app-icon.png" alt="" width="56" height="56" />
       <p>
         Version {{ build?.native }}<template v-if="build && build.bundle !== build.native"> · {{ build.bundle }}</template>
       </p>
