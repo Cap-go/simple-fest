@@ -8,11 +8,13 @@ import { ok, type Json } from './client'
 const bundleId = process.env.BUNDLE_ID ?? 'ee.forgr.festivalscan'
 const locale = process.env.LOCALE ?? 'en-US'
 const dryRun = process.env.DRY_RUN === '1'
-const shots = 'store/screenshots'
+// Captioned frames from scripts/caption-store-screenshots.ts.
+const shots = 'store/listing'
 
 type Placement = { type: 'APP_SCREENSHOT' | 'PRODUCT_PAGE_HEADER_ASSET' | 'APP_STORE_SEARCH_RESULTS_ASSET'; group: string; files: string[] }
 
-const scenes = ['01-import', '02-dynamic-home', '03-scan-result', '04-camera-scan', '05-device-sync']
+// Search results show the first three: lead with scanning, the result and the import.
+const scenes = ['04-camera-scan', '03-scan-result', '01-import', '02-dynamic-home', '05-device-sync']
 const plan: Placement[] = [
   { type: 'APP_SCREENSHOT', group: 'IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE', files: scenes.map((s) => `${shots}/ios-6.9/${s}.png`) },
   { type: 'APP_SCREENSHOT', group: 'IPHONE_FACE_ID_LARGE_PROFILE', files: scenes.map((s) => `${shots}/ios-6.5/${s}.png`) },
@@ -21,9 +23,9 @@ const plan: Placement[] = [
     type: 'APP_SCREENSHOT',
     group: 'IPHONE_DUO_PROFILE',
     files: [
-      ...['02-dynamic-home', '03-scan-result', '04-camera-scan'].map((s) => `${shots}/iphone-duo-inner-landscape/${s}.png`),
+      ...['04-camera-scan', '03-scan-result', '02-dynamic-home'].map((s) => `${shots}/iphone-duo-inner-landscape/${s}.png`),
       ...['01-import', '03-scan-result'].map((s) => `${shots}/iphone-duo-inner-portrait/${s}.png`),
-      ...['01-import', '03-scan-result', '04-camera-scan', '05-device-sync'].map((s) => `${shots}/iphone-duo-outer-portrait/${s}.png`),
+      ...['04-camera-scan', '03-scan-result', '01-import', '05-device-sync'].map((s) => `${shots}/iphone-duo-outer-portrait/${s}.png`),
       `${shots}/iphone-duo-outer-landscape/03-scan-result.png`,
     ],
   },

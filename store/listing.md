@@ -2,49 +2,41 @@
 
 ## App Identity
 
-- App name: Simple Fest
+- App Store name: Simple Fest: Ticket Scanner (home screen: Simple Fest)
 - SKU: `ee.forgr.festivalscan`
 - Primary language: English (U.S.)
 - Bundle ID / package name: `ee.forgr.festivalscan`
-- Category: Utilities / Productivity
+- Category: Business / Utilities (event check-in apps compete in Business; Utilities is crowded with generic QR readers)
 - Age rating posture: suitable for general audiences; the app scans tickets and imported attendee rows only.
 
-## Short Descriptions
+Source of truth for the App Store text is `scripts/asc/prepare-submission.ts`.
 
-Apple subtitle:
-Festival QR scanner for teams
+## ASO
+
+Apple indexes name + subtitle + keyword field (+ screenshot captions); each word counts once, so the
+keyword field never repeats a word from the name or subtitle. The description is not indexed.
+
+- Name (27/30): `Simple Fest: Ticket Scanner`
+- Subtitle (30/30): `Event QR Check-in & Guest List`
+- Keywords (97/100 bytes): `festival,entry,door,gate,admission,attendee,wristband,csv,excel,sheets,offline,concert,party,pass`
+- Screenshot order (first three show in search): camera scan, scan result, import, checkpoints, device sync
+- Screenshot captions (`scripts/caption-store-screenshots.ts`, output `store/listing/`):
+  1. Scan QR tickets at the door / Fast check-in for festivals and events
+  2. Know in a second / Valid, already used or not paid, with the guest name
+  3. Import any guest list / CSV, Excel or Google Sheets. Columns are detected for you.
+  4. Entry, day passes, meals, drinks / Every checkpoint from one spreadsheet
+  5. Sync every staff phone / Works offline and catches up when back online
+
+Next levers once live: ratings (in-app review prompt after 20 accepted scans), localized listings
+(fr, de, es, nl, pt-BR) with translated keywords, a 15-30s app preview video, and in-app events
+around festival season.
 
 Google Play short description:
-Scan festival QR tickets from CSV or Sheets, offline-first with live sync.
+Scan event QR tickets from CSV, Excel or Google Sheets. Offline synced check-in.
 
 ## Promotional Text
 
-Import a sheet, let AI map ticket columns, scan entrance, day, food, and drink QR codes, then sync live with other devices.
-
-## Full Description
-
-Simple Fest turns a spreadsheet into a local-first QR scanner for festival operations.
-
-Import a CSV, XLSX, or public Google Sheet export, and the app detects the ticket code column plus scan modes such as entrance, day passes, meals, drinks, and custom checkpoints. Staff can scan QR codes with the camera, enter a code manually, see the latest validation result, and export an updated CSV after the event.
-
-For multi-device teams, one device can host a festival session and show an invite QR. Other devices join to receive the current database plus live scan events while network is available. If network drops, each device keeps scanning locally and can export its own CSV.
-
-Key features:
-
-- Import CSV, XLSX, or public Google Sheet CSV data.
-- AI-assisted schema mapping with deterministic fallback heuristics.
-- Dynamic home screen based on detected scan modes.
-- QR camera scanning and manual code validation.
-- Entrance, day pass, food, drink, and custom scan workflows.
-- Local-first scan state with CSV export.
-- Optional device sync by invite QR.
-- Example template included for reliable imports.
-
-Simple Fest is built for temporary event teams that need a practical scanner without provisioning a full ticketing backend.
-
-## Keywords
-
-festival,ticket,qr,scanner,csv,sheet,check-in,food,drink,sync
+Import your guest list from CSV, Excel or Google Sheets and scan QR tickets in minutes. Free, no account, works offline and syncs every staff phone.
 
 ## What's New
 

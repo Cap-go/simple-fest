@@ -8,32 +8,41 @@ import { api, ok, type Json } from './client'
 const bundleId = process.env.BUNDLE_ID ?? 'ee.forgr.festivalscan'
 const site = 'https://simple-fest.pages.dev'
 
+// ASO: name + subtitle + keywords are indexed together and each word counts once, so the keyword
+// field never repeats a word from the name or subtitle. Keywords are 100 bytes max, no spaces.
 const listing = {
-  subtitle: 'Ticket scanner for any sheet',
-  promotionalText: 'Scan entrance, day passes, meals and drink tokens from one spreadsheet. Works offline and syncs between staff phones.',
-  keywords: 'festival,ticket,qr,scanner,check-in,guest list,csv,excel,event,entrance,wristband,offline,sync',
-  description: `Simple Fest turns your guest list into a fast QR ticket scanner for festivals and events.
+  name: 'Simple Fest: Ticket Scanner',
+  subtitle: 'Event QR Check-in & Guest List',
+  keywords: 'festival,entry,door,gate,admission,attendee,wristband,csv,excel,sheets,offline,concert,party,pass',
+  promotionalText: 'Import your guest list from CSV, Excel or Google Sheets and scan QR tickets in minutes. Free, no account, works offline and syncs every staff phone.',
+  description: `Turn any guest list into a fast QR ticket scanner. Simple Fest checks in guests at festivals, concerts, parties, conferences and club nights, right from the spreadsheet you already have.
 
-Import a CSV, Excel file or Google Sheet and Simple Fest detects the ticket code, guest name, paid status and every scan mode in your sheet: entrance, day passes, meals, drink tokens or your own checkpoints.
+Import a CSV, Excel file or Google Sheet. Simple Fest finds the ticket code, guest name, paid status and every checkpoint in your sheet: entry, day passes, meals, drink tokens or your own scan modes. No ticketing platform, no account, no setup call.
 
-AT THE GATE
-• Scan QR tickets with the camera or type a code or email
+CHECK-IN AT THE DOOR
+• Scan QR tickets with the camera, or type a code or email
 • Big green, orange or red result with the guest name
-• Sound and haptic feedback for accepted, already used and refused tickets
+• Already used and unpaid tickets are refused instantly
+• Sound and haptic feedback, so staff can keep their eyes on the queue
 • Screen stays awake while scanning
 
 BUILT FOR REAL EVENTS
 • Works offline: every scan is saved on the phone first
 • Host a session and let other staff phones join with a QR invite
-• Scans sync live between devices when the network is available
-• Already-used tickets are refused on every device
+• Scans sync live between all devices at every gate
+• A ticket scanned at one entrance is refused at the others
+
+EVERY CHECKPOINT FROM ONE SHEET
+• Entrance, Friday and Saturday day passes, meals, drinks, wristbands
+• Edit detected columns and scan modes at any time
+• Optional Sign in with ChatGPT for smarter column detection
 
 YOUR DATA STAYS YOURS
-• No account and no ads
+• Free, with no account and no ads
+• Guest lists stay on your devices
 • Export an updated CSV with every scan time when the event ends
-• Edit detected columns and scan modes at any time
 
-Simple Fest is made for festival teams, clubs, conferences and any event that already manages its guests in a spreadsheet.`,
+Simple Fest is made for festival teams, event organizers, venues and volunteers who manage their attendees in a spreadsheet and need a reliable door scanner today.`,
   copyright: '2026 Digital Shift OÜ',
   supportUrl: `${site}/support/`,
   marketingUrl: `${site}/`,
@@ -77,10 +86,10 @@ await ok('PATCH', `/v1/appInfoLocalizations/${infoLocalization.id}`, {
   data: {
     type: 'appInfoLocalizations',
     id: infoLocalization.id,
-    attributes: { subtitle: listing.subtitle, privacyPolicyUrl: listing.privacyPolicyUrl },
+    attributes: { name: listing.name, subtitle: listing.subtitle, privacyPolicyUrl: listing.privacyPolicyUrl },
   },
 })
-step('subtitle, privacy policy URL')
+step('name, subtitle, privacy policy URL')
 
 await ok('PATCH', `/v1/appStoreVersions/${version.id}`, {
   data: { type: 'appStoreVersions', id: version.id, attributes: { copyright: listing.copyright, releaseType: 'AFTER_APPROVAL' } },
@@ -92,12 +101,13 @@ await ok('PATCH', `/v1/appInfos/${info.id}`, {
     type: 'appInfos',
     id: info.id,
     relationships: {
-      primaryCategory: { data: { type: 'appCategories', id: 'UTILITIES' } },
-      secondaryCategory: { data: { type: 'appCategories', id: 'PRODUCTIVITY' } },
+      // Business: where event check-in apps compete, instead of the crowded Utilities QR scanner chart.
+      primaryCategory: { data: { type: 'appCategories', id: 'BUSINESS' } },
+      secondaryCategory: { data: { type: 'appCategories', id: 'UTILITIES' } },
     },
   },
 })
-step('category Utilities / Productivity')
+step('category Business / Utilities')
 
 await ok('PATCH', `/v1/apps/${appId}`, {
   data: { type: 'apps', id: appId, attributes: { contentRightsDeclaration: 'DOES_NOT_USE_THIRD_PARTY_CONTENT' } },
