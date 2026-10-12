@@ -14,6 +14,8 @@ type ChromeState = {
   tab: Ref<ChromeTab>
   syncLabel: Ref<string>
   syncOn: Ref<boolean>
+  // True once the page is scrolled: the large title collapses into the small centered one.
+  collapsed: Ref<boolean>
 }
 
 // Native bars follow the neutral ink of the web UI: black in light mode, white in dark mode.
@@ -31,8 +33,9 @@ function svg(dataUrl: string) {
     .replaceAll("class='ionicon-stroke-width'", "stroke-width='32'")
 }
 
+// iOS uses SF Symbols (a top-level svg would win over them), Android renders the ionicon.
 function icon(sfSymbol: string, ionicon: string): NativeNavigationIcon {
-  return { ios: { sfSymbol }, android: { svg: svg(ionicon) }, svg: svg(ionicon) }
+  return { ios: { sfSymbol }, android: { svg: svg(ionicon) } }
 }
 
 const tabs = [
@@ -78,6 +81,8 @@ export function useNativeChrome(state: ChromeState, onTab: (tab: ChromeTab) => v
     void NativeNavigation.setNavbar({
       hidden,
       title: state.title.value,
+      large: !state.collapsed.value,
+      animated: true,
       backButton: { visible: false },
       rightItems: [
         {

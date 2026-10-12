@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { Capacitor } from '@capacitor/core'
 import { IonApp, IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonPage, IonTitle, IonToolbar } from '@ionic/vue'
 import { qrCode, qrCodeOutline, settings, settingsOutline, sync as syncIcon, syncOutline } from 'ionicons/icons'
 import CameraScreen from './components/CameraScreen.vue'
@@ -31,8 +32,13 @@ const syncLabel = computed(() => {
   return syncStatus.value.mode === 'reconnecting' || syncStatus.value.mode === 'paused' ? 'Reconnecting' : 'Offline'
 })
 
+// iOS large titles: big at the top of a page, collapsing to the small centered title on scroll.
+const largeTitles = nativeChrome && Capacitor.getPlatform() === 'ios'
+const collapsed = ref(false)
+watch(tab, () => (collapsed.value = false))
+
 useNativeChrome(
-  { visible: computed(() => Boolean(db.value) && !camera.value), title, tab, syncLabel, syncOn },
+  { visible: computed(() => Boolean(db.value) && !camera.value), title, tab, syncLabel, syncOn, collapsed },
   (next) => selectTab(next),
 )
 
@@ -81,7 +87,12 @@ function selectTab(next: Tab) {
 
       <!-- Web content scrolls in its own view, so iOS cannot draw its scroll-edge effect under native bars. -->
       <div v-if="nativeChrome" class="native-edge top" aria-hidden="true" />
-      <IonContent :class="{ 'native-insets': nativeChrome }" :scroll-y="tab !== 'scan'">
+      <IonContent
+        :class="{ 'native-insets': nativeChrome, 'large-titles': largeTitles }"
+        :scroll-y="tab !== 'scan'"
+        :scroll-events="nativeChrome"
+        @ion-scroll="collapsed = $event.detail.scrollTop > 36"
+      >
         <ScanTab v-if="tab === 'scan'" @scan="camera = 'scan'" />
         <SyncTab v-else-if="tab === 'sync'" @scan-invite="camera = 'join'" />
         <SetupTab v-else @import="importOpen = true" />
@@ -128,12 +139,17 @@ ion-title {
 }
 
 /* Native bars sit over the WebView. The plugin publishes their sizes as CSS vars; when iOS hosts the
-   WebView in its own tab controller the bar height arrives as safe area instead, so take the larger. */
+   WebView in its own tab controller the bar height arrives as safe area instead, so take the larger.
+   On iOS the top padding stays at the large-title height (96pt) so content does not jump when it collapses. */
 .native-insets {
   --padding-top: max(var(--cap-native-navigation-top, 0px), env(safe-area-inset-top));
   --padding-bottom: calc(max(var(--cap-native-navigation-bottom, 0px), env(safe-area-inset-bottom)) + 16px);
   --padding-start: max(var(--cap-native-navigation-left, 0px), env(safe-area-inset-left));
   --padding-end: max(var(--cap-native-navigation-right, 0px), env(safe-area-inset-right));
+}
+
+.native-insets.large-titles {
+  --padding-top: max(var(--cap-native-navigation-top, 0px), calc(env(safe-area-inset-top) + 96px));
 }
 
 .sync-chip {
