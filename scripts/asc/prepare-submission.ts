@@ -1,7 +1,8 @@
 // Fills everything App Review needs that the App Store Connect API supports: listing text, URLs,
 // category, age rating, content rights, free price, availability, review contact and the build.
 // App Privacy answers have no API and must be set in App Store Connect.
-// Env: ASC_KEY_ID, ASC_ISSUER_ID, optional BUNDLE_ID, BUILD (defaults to the newest valid build).
+// Env: ASC_KEY_ID, ASC_ISSUER_ID, optional BUNDLE_ID, BUILD (defaults to the newest valid build),
+// REVIEW_DEMO_USER / REVIEW_DEMO_PASSWORD (ChatGPT test account for App Review, never committed).
 // Usage: bun scripts/asc/prepare-submission.ts
 import { api, ok, type Json } from './client'
 
@@ -49,12 +50,13 @@ Simple Fest is made for festival teams, event organizers, venues and volunteers 
   privacyPolicyUrl: `${site}/privacy/`,
 }
 
-const reviewNotes = `No account is needed.
+const reviewNotes = `No account is needed to scan tickets.
 1. On the first screen tap "Try with sample data".
 2. Type TCK-1001 in the "Type ticket code or email" field and press the arrow: Accepted.
 3. Type TCK-1001 again: Already scanned. TCK-1003: Not paid.
 4. "Scan Entrance" opens the camera scanner for QR tickets. A sample ticket QR encodes TCK-1002.
 5. The Devices tab hosts a sync room and shows an invite QR for a second device.
+6. Optional AI column detection: Event tab > Connect ChatGPT, sign in with the demo account below. Scanning works without it.
 Microphone and location are never requested; the camera library references those APIs.`
 
 const app = (await ok('GET', `/v1/apps?filter[bundleId]=${bundleId}`)).data[0]
@@ -202,7 +204,10 @@ step('availability: all territories')
 // Review contact: reuse the team's contact from its newest other app.
 const reviewDetail = await api('GET', `/v1/appStoreVersions/${version.id}/appStoreReviewDetail`)
 const contact = await teamReviewContact()
-const reviewAttributes = { ...contact, demoAccountRequired: false, notes: reviewNotes }
+const demoUser = process.env.REVIEW_DEMO_USER
+const demoPassword = process.env.REVIEW_DEMO_PASSWORD
+const demo = demoUser && demoPassword ? { demoAccountRequired: true, demoAccountName: demoUser, demoAccountPassword: demoPassword } : { demoAccountRequired: false }
+const reviewAttributes = { ...contact, ...demo, notes: reviewNotes }
 if (reviewDetail.data?.data) {
   await ok('PATCH', `/v1/appStoreReviewDetails/${reviewDetail.data.data.id}`, {
     data: { type: 'appStoreReviewDetails', id: reviewDetail.data.data.id, attributes: reviewAttributes },
