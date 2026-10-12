@@ -7,7 +7,8 @@ guest list, event, festival, CSV, Excel, Google Sheets, offline.
 - Package: `ee.forgr.festivalscan`
 - App name (27/30): Simple Fest: Ticket Scanner
 - Short description (80/80): Scan event QR tickets from CSV, Excel or Google Sheets. Offline synced check-in.
-- Category: Business. Tags: Event management, Productivity, Business tools
+- Category: Business. Tags: Business, Events, Productivity
+- Play Console: developer account 7955825393155090217 (Digital shift OU), app id 4973698742407004629
 - Contact email: contact@digitalshiftou.com
 - Website: https://simple-fest.pages.dev/
 - Privacy policy: https://simple-fest.pages.dev/privacy/
