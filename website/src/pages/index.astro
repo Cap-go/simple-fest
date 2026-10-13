@@ -1,295 +1,334 @@
 ---
-const metrics = [
-  ['Import', 'CSV, XLSX, Sheets'],
-  ['Validate', 'Entrance, days, meals, drinks'],
-  ['Export', 'Audit-ready CSV']
+import Base from '../layouts/Base.astro'
+
+const appStore = 'https://apps.apple.com/app/id6821213687'
+const googlePlay = 'https://play.google.com/store/apps/details?id=ee.forgr.festivalscan'
+
+const steps = [
+  ['Import your list', 'CSV, Excel or a Google Sheet. Names, emails and what each person paid. Columns are detected for you.', '/screens/01-import.jpg', 'Import screen'],
+  ['Scan at the door', 'Green means in. Orange means already used. Red means not paid. Works offline.', '/screens/03-scan-result.jpg', 'Accepted scan for Ada Lovelace'],
+  ['Add more phones', 'Show a QR on the first phone, scan it on the next. Scans sync when the network is back.', '/screens/05-device-sync.jpg', 'Device sync invite QR'],
 ]
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Simple Fest - Local-first ticket scanner</title>
-    <meta name="description" content="Simple Fest turns a spreadsheet into a local-first QR scanner for entrance, day passes, food, drinks, and custom festival checks." />
-    <meta property="og:title" content="Simple Fest" />
-    <meta property="og:description" content="A local-first scanner for festival teams." />
-    <meta property="og:type" content="website" />
-  </head>
-  <body>
-    <main>
-      <section class="hero" aria-labelledby="title">
-        <div class="hero__copy">
-          <p class="eyebrow">Festival operations</p>
-          <h1 id="title">Simple Fest</h1>
-          <p class="lead">
-            Import a ticket sheet, scan QR codes on mobile, sync another device when the network is available, and export the event audit when doors close.
-          </p>
-          <div class="actions">
-            <a href="mailto:contact@digitalshiftou.com?subject=Simple%20Fest">Request access</a>
-            <a class="secondary" href="#workflow">View workflow</a>
-          </div>
+<Base title="Simple Fest - free ticket scanner for small events" description="Turn your guest list into a QR ticket scanner. Free, offline, no account. Built for small festivals, parties and community events.">
+  <main>
+    <section class="wrap hero">
+      <div class="copy">
+        <h1>Check guests in from a spreadsheet.</h1>
+        <p class="lead">
+          Simple Fest turns the list of who paid into a ticket scanner for the gate, the bar and the food stand. Free, offline, no account.
+        </p>
+        <div class="stores">
+          <a class="pill" href={appStore} rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.27-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.42-3.65zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.61-2.66 1.37-.58.67-1.1 1.75-.96 2.79 1.01.08 2.05-.52 2.68-1.27z"/></svg>
+            <span><small>Download on the</small>App Store</span>
+          </a>
+          <a class="pill" href={googlePlay} rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7L3.6 2.3zm10.8 10.8 2.8 2.8-11.9 6.8c-.4.2-.8.3-1.1.2l10.2-9.8zm4.1-4.1 3 1.7c.9.5.9 1.4 0 1.9l-3 1.7-3-3 3-2.3zM5.3 1.9l11.9 6.8-2.8 2.8L4.2 1.7c.3-.1.7 0 1.1.2z"/></svg>
+            <span><small>Get it on</small>Google Play</span>
+          </a>
         </div>
-        <div class="product-shot" aria-label="Simple Fest app preview">
-          <img src="/icon.svg" alt="Simple Fest app icon" />
-          <div>
-            <span>QR</span>
-            <strong>Entrance ready</strong>
-            <small>Local scan log active</small>
-          </div>
-        </div>
-      </section>
+        <ul class="facts">
+          <li>Free for every event</li>
+          <li>Works without internet</li>
+          <li>Your list stays on your phones</li>
+        </ul>
+      </div>
+      <div class="phone">
+        <video src="/video/demo.mp4" poster="/video/poster.jpg" autoplay muted loop playsinline aria-label="Simple Fest demo: scanning guests at the entrance"></video>
+      </div>
+    </section>
 
-      <section class="metrics" aria-label="Simple Fest capabilities">
-        {metrics.map(([label, value]) => (
-          <div>
-            <small>{label}</small>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </section>
+    <section class="wrap story card">
+      <h2>Made for the events big ticket apps forget.</h2>
+      <p>
+        This summer I helped run a small event. Our tickets were a spreadsheet of names and who had paid. Ticket platforms cost too much for one weekend, so I built this to check people in at the gate and the bar. It worked, so now it is free for everyone.
+      </p>
+    </section>
 
-      <section id="workflow" class="workflow" aria-labelledby="workflow-title">
-        <div>
-          <p class="eyebrow">Workflow</p>
-          <h2 id="workflow-title">Built for check-in tables, bars, and meal lines.</h2>
-        </div>
-        <div class="steps">
-          <article>
-            <span>01</span>
-            <h3>Import the sheet</h3>
-            <p>Use CSV, XLSX, or a public Google Sheet export. The app detects ticket, name, paid status, and entitlement columns.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h3>Scan by mode</h3>
-            <p>Switch between entrance, day pass, meal, drink token, and custom modes without changing the original spreadsheet.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h3>Export the audit</h3>
-            <p>Download an enriched CSV with local scan columns and consumed counts ready for the next event handoff.</p>
-          </article>
-        </div>
-      </section>
-    </main>
-    <footer>Digital Shift OÜ · <a href="/support">Support</a> · <a href="/privacy">Privacy</a></footer>
-  </body>
-</html>
+    <section class="wrap steps">
+      {steps.map(([title, text, src, alt], index) => (
+        <article class="card">
+          <span class="num">{index + 1}</span>
+          <h3>{title}</h3>
+          <p>{text}</p>
+          <img src={src} alt={alt} loading="lazy" width="660" height="1434" />
+        </article>
+      ))}
+    </section>
+
+    <section id="ticket" class="wrap ticket card">
+      <div>
+        <h2>No QR codes yet? Use emails.</h2>
+        <p>
+          Simple Fest can find guests by email. Type a guest's email to make their QR ticket, then send it to them. Scan it at the door and the app finds them in your list.
+        </p>
+        <p class="note">Made in your browser. The email is not sent anywhere.</p>
+        <form id="ticket-form">
+          <label for="ticket-email">Guest email</label>
+          <div class="row">
+            <input id="ticket-email" type="email" required placeholder="guest@example.com" autocomplete="off" />
+            <button class="pill" type="submit">Make ticket</button>
+          </div>
+          <label for="ticket-event">Event name (optional)</label>
+          <input id="ticket-event" type="text" placeholder="Summer Fest 2026" autocomplete="off" />
+        </form>
+      </div>
+      <div class="ticket-out" id="ticket-out" hidden>
+        <canvas id="ticket-canvas" width="720" height="960" aria-label="Generated QR ticket"></canvas>
+        <a class="pill" id="ticket-download" download="ticket.png" href="#">Download PNG</a>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<script>
+  import { toCanvas } from 'qrcode'
+
+  const form = document.getElementById('ticket-form') as HTMLFormElement
+  const email = document.getElementById('ticket-email') as HTMLInputElement
+  const eventName = document.getElementById('ticket-event') as HTMLInputElement
+  const out = document.getElementById('ticket-out') as HTMLDivElement
+  const canvas = document.getElementById('ticket-canvas') as HTMLCanvasElement
+  const download = document.getElementById('ticket-download') as HTMLAnchorElement
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    const value = email.value.trim().toLowerCase()
+    if (!value) return
+
+    const qr = document.createElement('canvas')
+    await toCanvas(qr, value, { width: 560, margin: 1, errorCorrectionLevel: 'M' })
+
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#111111'
+    ctx.textAlign = 'center'
+    ctx.font = '700 40px -apple-system, system-ui, sans-serif'
+    ctx.fillText(eventName.value.trim() || 'Your ticket', 360, 90)
+    ctx.drawImage(qr, 80, 140)
+    ctx.fillStyle = '#6e6e73'
+    ctx.font = '500 28px -apple-system, system-ui, sans-serif'
+    ctx.fillText(value, 360, 770, 640)
+    ctx.font = '500 22px -apple-system, system-ui, sans-serif'
+    ctx.fillText('Show this QR at the entrance', 360, 830)
+
+    download.href = canvas.toDataURL('image/png')
+    download.download = `ticket-${value.replace(/[^a-z0-9]+/g, '-')}.png`
+    out.hidden = false
+  })
+</script>
 
 <style>
-  :root {
-    color-scheme: light;
-    --ink: #161f2f;
-    --muted: #667085;
-    --line: #d9e2ec;
-    --paper: #f6f8fb;
-    --panel: #ffffff;
-    --accent: #2364aa;
-    --accent-strong: #163d67;
-    --lime: #b7d968;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-
-  .hero,
-  .metrics,
-  .workflow,
-  footer {
-    width: min(1180px, calc(100% - 32px));
-    margin: 0 auto;
-  }
-
   .hero {
-    min-height: 86vh;
     display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(320px, 0.78fr);
-    gap: clamp(32px, 7vw, 92px);
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+    gap: clamp(32px, 6vw, 80px);
     align-items: center;
-    padding: 56px 0 30px;
-  }
-
-  .eyebrow {
-    margin: 0 0 12px;
-    color: var(--accent-strong);
-    font-size: 0.78rem;
-    font-weight: 900;
-    text-transform: uppercase;
-  }
-
-  h1,
-  h2,
-  h3,
-  p {
-    margin-top: 0;
+    padding: clamp(24px, 6vw, 72px) 0;
   }
 
   h1 {
-    margin-bottom: 20px;
-    font-size: clamp(3.3rem, 9vw, 7.6rem);
-    line-height: 0.9;
-    font-weight: 900;
+    margin-bottom: 18px;
+    font-size: clamp(2.6rem, 6.4vw, 4.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
   }
 
   h2 {
-    margin-bottom: 0;
-    font-size: clamp(2rem, 4vw, 4rem);
-    line-height: 1;
+    margin-bottom: 12px;
+    font-size: clamp(1.5rem, 3.4vw, 2.2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
   }
 
   .lead {
-    max-width: 620px;
+    max-width: 560px;
     color: var(--muted);
-    font-size: clamp(1.08rem, 2vw, 1.32rem);
-    line-height: 1.55;
+    font-size: clamp(1.08rem, 2vw, 1.3rem);
   }
 
-  .actions {
+  .stores {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: 28px;
+    margin: 28px 0 22px;
   }
 
-  a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 46px;
-    padding: 0 18px;
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    background: var(--accent);
-    color: white;
-    font-weight: 800;
-    text-decoration: none;
-  }
-
-  .secondary {
-    background: transparent;
-    color: var(--accent-strong);
-  }
-
-  .product-shot {
-    aspect-ratio: 0.74;
-    display: grid;
-    place-items: center;
-    gap: 24px;
-    padding: 34px;
-    border: 1px solid var(--line);
-    border-radius: 28px;
-    background: #0f172a;
-    color: white;
-    box-shadow: 0 24px 80px rgba(22, 31, 47, 0.2);
-  }
-
-  .product-shot img {
-    width: min(180px, 42vw);
-    aspect-ratio: 1;
-    object-fit: contain;
-  }
-
-  .product-shot div {
-    width: 100%;
-    display: grid;
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    padding: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.24);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .product-shot span {
-    color: var(--lime);
-    font-weight: 900;
+  .facts li {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 600;
   }
 
-  .product-shot strong {
-    font-size: 1.35rem;
+  .phone {
+    justify-self: center;
+    width: min(340px, 100%);
+    padding: 10px;
+    border-radius: 48px;
+    background: #111111;
   }
 
-  .product-shot small {
-    color: #bcc7d9;
-  }
-
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    padding: 0 0 68px;
-  }
-
-  .metrics div,
-  article {
-    border-top: 3px solid var(--accent);
-    padding-top: 18px;
-  }
-
-  .metrics small,
-  article span {
+  .phone video {
     display: block;
-    margin-bottom: 10px;
-    color: var(--accent-strong);
-    font-size: 0.78rem;
-    font-weight: 900;
-    text-transform: uppercase;
+    width: 100%;
+    aspect-ratio: 390 / 844;
+    border-radius: 38px;
+    background: #f2f2f7;
+    object-fit: cover;
   }
 
-  .metrics strong {
-    display: block;
-    font-size: clamp(1.2rem, 3vw, 2rem);
+  .story {
+    padding: clamp(24px, 5vw, 44px);
+    margin-bottom: 20px;
   }
 
-  .workflow {
-    display: grid;
-    grid-template-columns: 0.78fr 1.22fr;
-    gap: 34px;
-    padding: 80px 0;
-    border-top: 1px solid var(--line);
+  .story p {
+    max-width: 760px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 1.1rem;
   }
 
   .steps {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
+    margin-bottom: 20px;
   }
 
-  article p {
-    color: var(--muted);
-    line-height: 1.55;
+  .steps article {
+    display: flex;
+    flex-direction: column;
+    padding: 24px 24px 0;
+    overflow: hidden;
   }
 
-  footer {
-    padding: 26px 0 38px;
-    border-top: 1px solid var(--line);
+  .num {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--ink-contrast);
+    font-weight: 700;
+  }
+
+  .steps h3 {
+    margin-bottom: 6px;
+    font-size: 1.2rem;
+  }
+
+  .steps p {
     color: var(--muted);
+  }
+
+  .steps img {
+    display: block;
+    width: 86%;
+    height: auto;
+    margin: auto auto 0;
+    border-radius: 24px 24px 0 0;
+    border: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .ticket {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    gap: 32px;
+    align-items: start;
+    padding: clamp(24px, 5vw, 44px);
+    margin-bottom: 48px;
+    scroll-margin-top: 16px;
+  }
+
+  .ticket p {
+    max-width: 560px;
+    color: var(--muted);
+  }
+
+  .note {
+    font-size: 0.9rem;
+  }
+
+  form {
+    display: grid;
+    gap: 8px;
+    max-width: 520px;
+    margin-top: 20px;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  input {
+    flex: 1 1 220px;
+    min-height: 52px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  input:focus-visible,
+  .pill:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .ticket-out {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ticket-out[hidden] {
+    display: none;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    border: 1px solid var(--line);
   }
 
   @media (max-width: 860px) {
     .hero,
-    .workflow,
-    .metrics,
-    .steps {
+    .steps,
+    .ticket {
       grid-template-columns: 1fr;
     }
 
-    .hero {
-      min-height: auto;
-      padding-top: 42px;
-    }
-
-    .product-shot {
-      aspect-ratio: auto;
-      min-height: 420px;
+    .steps img {
+      width: 70%;
     }
   }
 </style>
