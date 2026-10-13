@@ -10,8 +10,8 @@ guest list, event, festival, CSV, Excel, Google Sheets, offline.
 - Category: Business. Tags: Business, Events, Productivity
 - Play Console: developer account 7955825393155090217 (Digital shift OU), app id 4973698742407004629
 - Contact email: contact@digitalshiftou.com
-- Website: https://simple-fest.pages.dev/
-- Privacy policy: https://simple-fest.pages.dev/privacy/
+- Website: https://simplefest.app/
+- Privacy policy: https://simplefest.app/privacy/
 - Graphics: `store/assets/play-store-icon.png` (512), `store/assets/play-store-feature-graphic.png` (1024x500,
   `scripts/generate-play-feature-graphic.ts`), phone screenshots `store/listing/android-phone/` (1080x1920),
   tablet screenshots `store/listing/ipad-13/`

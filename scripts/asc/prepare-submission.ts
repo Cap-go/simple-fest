@@ -6,7 +6,7 @@
 import { api, ok, type Json } from './client'
 
 const bundleId = process.env.BUNDLE_ID ?? 'ee.forgr.festivalscan'
-const site = 'https://simple-fest.pages.dev'
+const site = 'https://simplefest.app'
 
 // ASO: name + subtitle + keywords are indexed together and each word counts once, so the keyword
 // field never repeats a word from the name or subtitle. Keywords are 100 bytes max, no spaces.
