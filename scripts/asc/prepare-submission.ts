@@ -220,8 +220,13 @@ step('review contact and notes')
 const builds: Json[] = (await ok('GET', `/v1/builds?filter[app]=${appId}&filter[processingState]=VALID&sort=-uploadedDate&limit=10`)).data
 const build = process.env.BUILD ? builds.find((item) => item.attributes.version === process.env.BUILD) : builds[0]
 if (!build) throw new Error('No valid build')
+// The version string must match the build's marketing version (CI bumps it on native builds).
+const buildVersion: string = (await ok('GET', `/v1/builds/${build.id}/preReleaseVersion`)).data.attributes.version
+if (version.attributes.versionString !== buildVersion) {
+  await ok('PATCH', `/v1/appStoreVersions/${version.id}`, { data: { type: 'appStoreVersions', id: version.id, attributes: { versionString: buildVersion } } })
+}
 await ok('PATCH', `/v1/appStoreVersions/${version.id}/relationships/build`, { data: { type: 'builds', id: build.id } })
-step(`build ${build.attributes.version}`)
+step(`version ${buildVersion}, build ${build.attributes.version}`)
 
 async function teamReviewContact() {
   const apps: Json[] = (await ok('GET', '/v1/apps?limit=50')).data
