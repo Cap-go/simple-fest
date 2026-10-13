@@ -1,41 +1,40 @@
 import Papa from 'papaparse'
 import { exampleCsv } from './sampleSheet'
-import { inferSchema } from './schemaInference'
+import { inferSchemaHeuristically } from './schemaInference'
 import { serviceConsumption } from './scanEngine'
-import type { AiClient, FestivalDb, GuestRecord, ImportResult, RawRow, SchemaMapping } from './types'
+import type { FestivalDb, GuestRecord, ImportResult, RawRow, SchemaMapping } from './types'
 
-export async function importFile(file: File, festivalName: string, deviceId: string, ai?: AiClient): Promise<ImportResult> {
+export async function importFile(file: File, festivalName: string, deviceId: string): Promise<ImportResult> {
   const extension = file.name.split('.').pop()?.toLowerCase()
   const rows = extension === 'xlsx' || extension === 'xls' ? await parseWorkbook(file) : await parseCsv(await file.text())
-  return buildDatabase(rows, festivalName || nameFromFile(file.name), deviceId, ai)
+  return buildDatabase(rows, festivalName || nameFromFile(file.name), deviceId)
 }
 
-export async function importSheetUrl(url: string, festivalName: string, deviceId: string, ai?: AiClient): Promise<ImportResult> {
+export async function importSheetUrl(url: string, festivalName: string, deviceId: string): Promise<ImportResult> {
   const response = await fetch(toCsvExportUrl(url))
   if (!response.ok) {
     throw new Error(`Sheet download failed (${response.status})`)
   }
   const rows = await parseCsv(await response.text())
-  return buildDatabase(rows, festivalName || 'Festival import', deviceId, ai)
+  return buildDatabase(rows, festivalName || 'Festival import', deviceId)
 }
 
-export async function importExample(deviceId: string, ai?: AiClient): Promise<ImportResult> {
+export async function importExample(deviceId: string): Promise<ImportResult> {
   const rows = await parseCsv(exampleCsv())
-  return buildDatabase(rows, 'Example festival', deviceId, ai)
+  return buildDatabase(rows, 'Example festival', deviceId)
 }
 
 export async function buildDatabase(
   rows: RawRow[],
   festivalName: string,
   deviceId: string,
-  ai?: AiClient,
 ): Promise<ImportResult> {
   const normalizedRows = normalizeRows(rows)
   if (normalizedRows.length === 0) {
     throw new Error('No rows found in the uploaded sheet')
   }
 
-  const mapping = await inferSchema(normalizedRows, ai)
+  const mapping = inferSchemaHeuristically(normalizedRows)
   const now = new Date().toISOString()
   const db: FestivalDb = {
     id: cryptoRandomId('festival'),

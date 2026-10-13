@@ -1,35 +1,12 @@
-import type { AiClient, RawRow, ScanKind, ScanService, SchemaMapping } from './types'
+import type { RawRow, ScanKind, ScanService, SchemaMapping } from './types'
 
 type ColumnScore = {
   column: string
   score: number
 }
 
-type AiSchemaPayload = Partial<Pick<SchemaMapping, 'idColumn' | 'codeColumn' | 'nameColumn' | 'emailColumn' | 'paidColumn' | 'services' | 'warnings' | 'confidence'>>
-
 const scanWords = ['scan', 'scanned', 'used', 'consumed', 'taken', 'validated', 'checked', 'arrive', 'arrived', 'arrival']
 const ignoredServiceWords = ['vegetarian', 'vegetarien', 'vegan', 'allergy', 'allergies', 'comment', 'note', 'phone', 'telephone']
-
-export async function inferSchema(rows: RawRow[], ai?: AiClient): Promise<SchemaMapping> {
-  const heuristic = inferSchemaHeuristically(rows)
-
-  if (!ai) {
-    return heuristic
-  }
-
-  try {
-    const aiMapping = await inferSchemaWithAi(rows, heuristic, ai)
-    return mergeAiMapping(rows, heuristic, aiMapping)
-  } catch (error) {
-    return {
-      ...heuristic,
-      warnings: [
-        ...heuristic.warnings,
-        `AI mapping failed, using heuristic mapping: ${error instanceof Error ? error.message : 'unknown error'}`,
-      ],
-    }
-  }
-}
 
 export function inferSchemaHeuristically(rows: RawRow[]): SchemaMapping {
   const columns = columnsFromRows(rows)
@@ -313,76 +290,4 @@ function labelForColumn(column: string) {
     .replace(/\s+scan(ned)?$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-async function inferSchemaWithAi(rows: RawRow[], heuristic: SchemaMapping, ai: AiClient): Promise<AiSchemaPayload> {
-  const text = await ai(
-    'Map a festival attendee spreadsheet into scanner roles. Return only JSON. Column names must exactly match the provided columns.',
-    JSON.stringify({
-      task: 'Infer ticket code, identity, payment, and scan services from festival spreadsheet columns.',
-      allowedKinds: ['entrance', 'day', 'food', 'drink', 'custom'],
-      outputShape: {
-        confidence: 'number 0..1',
-        idColumn: 'string optional',
-        codeColumn: 'string optional, ticket code lookup',
-        nameColumn: 'string optional',
-        emailColumn: 'string optional',
-        paidColumn: 'string optional',
-        services: 'array of {id,label,kind,entitlementColumn?,consumedColumn?,quotaColumn?,confidence,notes?}',
-        warnings: 'array of strings',
-      },
-      heuristic,
-      columns: heuristic.columns,
-      sampleRows: rows.slice(0, 8),
-    }),
-  )
-  if (!text.trim()) {
-    throw new Error('AI response did not include text output')
-  }
-  return JSON.parse(stripJsonFence(text)) as AiSchemaPayload
-}
-
-function mergeAiMapping(rows: RawRow[], heuristic: SchemaMapping, aiMapping: AiSchemaPayload): SchemaMapping {
-  const columns = columnsFromRows(rows)
-  const validColumn = (column?: string) => (column && columns.includes(column) ? column : undefined)
-  const services = Array.isArray(aiMapping.services)
-    ? aiMapping.services
-        .filter((service) => service && typeof service.label === 'string')
-        .map((service, index) => ({
-          id: service.id || uniqueServiceId([], service.label || `service-${index + 1}`),
-          label: service.label || `Service ${index + 1}`,
-          kind: validKind(service.kind) ? service.kind : 'custom',
-          entitlementColumn: validColumn(service.entitlementColumn),
-          consumedColumn: validColumn(service.consumedColumn),
-          quotaColumn: validColumn(service.quotaColumn),
-          confidence: clampConfidence(service.confidence),
-          notes: service.notes,
-        }))
-    : heuristic.services
-
-  return {
-    version: 1,
-    source: 'ai',
-    confidence: clampConfidence(aiMapping.confidence ?? heuristic.confidence),
-    columns,
-    idColumn: validColumn(aiMapping.idColumn) ?? heuristic.idColumn,
-    codeColumn: validColumn(aiMapping.codeColumn) ?? heuristic.codeColumn,
-    nameColumn: validColumn(aiMapping.nameColumn) ?? heuristic.nameColumn,
-    emailColumn: validColumn(aiMapping.emailColumn) ?? heuristic.emailColumn,
-    paidColumn: validColumn(aiMapping.paidColumn) ?? heuristic.paidColumn,
-    services: services.length ? services : heuristic.services,
-    warnings: [...(aiMapping.warnings ?? []), ...heuristic.warnings.filter((warning) => warning.startsWith('No QR'))],
-  }
-}
-
-function stripJsonFence(text: string) {
-  return text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim()
-}
-
-function validKind(value: unknown): value is ScanKind {
-  return value === 'entrance' || value === 'day' || value === 'food' || value === 'drink' || value === 'custom'
-}
-
-function clampConfidence(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.6
 }

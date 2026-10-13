@@ -24,7 +24,7 @@ import { useFestival } from '../composables/useFestival'
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; imported: [] }>()
 
-const { busy, runImport, chatGpt } = useFestival()
+const { busy, runImport } = useFestival()
 const source = ref<'file' | 'sheet'>('file')
 const name = ref('')
 const url = ref('')
@@ -110,7 +110,6 @@ async function submit() {
             <strong>Columns are detected automatically</strong>
             <p>
               One row per guest with a ticket code, plus optional name, email, paid and one column per day, meal or drink quota.
-              {{ chatGpt ? 'ChatGPT is connected for smarter detection.' : '' }}
             </p>
             <IonButton fill="clear" size="small" @click="shareExampleCsv">Download example CSV</IonButton>
           </div>

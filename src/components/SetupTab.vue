@@ -9,19 +9,18 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonSpinner,
   IonSelect,
   IonSelectOption,
   alertController,
 } from '@ionic/vue'
-import { add, cloudUploadOutline, downloadOutline, sparklesOutline, trashOutline, warningOutline } from 'ionicons/icons'
+import { add, cloudUploadOutline, downloadOutline, trashOutline, warningOutline } from 'ionicons/icons'
 import { useFestival, type RoleColumn } from '../composables/useFestival'
 import type { ScanKind } from '../domain/types'
 import { getBuildInfo, type BuildInfo, shareExampleCsv } from '../native/device'
 import { kindOptions, serviceIcon } from '../ui'
 
 const emit = defineEmits<{ import: [] }>()
-const { db, chatGpt, chatGptBusy, chatGptAvailable, connectAi, disconnectAi, statFor, exportCsv, resetDb, renameFestival, updateRoleColumn, updateService, addService, removeService } =
+const { db, statFor, exportCsv, resetDb, renameFestival, updateRoleColumn, updateService, addService, removeService } =
   useFestival()
 
 const name = ref(db.value?.name ?? '')
@@ -198,27 +197,6 @@ async function confirmRemoveMode(id: string, label: string) {
         <IonLabel>Download example CSV</IonLabel>
       </IonItem>
     </IonList>
-
-    <h2 class="section-title">AI column detection</h2>
-    <IonList class="inset" lines="none">
-      <IonItem v-if="chatGpt">
-        <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
-        <IonLabel>
-          <h3>ChatGPT connected</h3>
-          <p>{{ chatGpt.email || 'Your ChatGPT plan' }}</p>
-        </IonLabel>
-        <IonButton slot="end" fill="clear" color="medium" @click="disconnectAi">Disconnect</IonButton>
-      </IonItem>
-      <IonItem v-else button :detail="false" :disabled="!chatGptAvailable || chatGptBusy" @click="connectAi">
-        <IonIcon slot="start" :icon="sparklesOutline" color="medium" aria-hidden="true" />
-        <IonLabel>
-          <h3>Connect ChatGPT</h3>
-          <p>{{ chatGptAvailable ? 'Use your ChatGPT Plus or Pro plan' : 'Available in the mobile app' }}</p>
-        </IonLabel>
-        <IonSpinner v-if="chatGptBusy" slot="end" name="crescent" />
-      </IonItem>
-    </IonList>
-    <p class="caption muted">Reads column names and a few sample rows when you import, to detect scan modes. No API key needed.</p>
 
     <IonButton class="reset" expand="block" fill="outline" color="danger" @click="confirmReset">
       <IonIcon slot="start" :icon="trashOutline" aria-hidden="true" />Remove event from this phone

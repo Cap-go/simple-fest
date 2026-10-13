@@ -55,7 +55,7 @@ export function getDeviceId() {
   return next
 }
 
-// Older builds stored an OpenAI API key; AI now runs through Sign in with ChatGPT.
+// Older builds stored an OpenAI API key.
 export function purgeLegacyAiSettings() {
   localStorage.removeItem(settingsKey)
 }

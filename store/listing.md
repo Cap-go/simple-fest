@@ -40,7 +40,7 @@ Import your guest list from CSV, Excel or Google Sheets and scan QR tickets in m
 
 ## What's New
 
-Initial generic festival scanner with spreadsheet import, AI mapping, local scanning, CSV export, and device sync rooms.
+Initial generic festival scanner with spreadsheet import, automatic column mapping, local scanning, CSV export, and device sync rooms.
 
 ## Privacy And Data Safety Notes
 

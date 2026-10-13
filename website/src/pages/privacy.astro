@@ -10,12 +10,8 @@ import Doc from '../layouts/Doc.astro'
   <h2>Data stored on your device</h2>
   <ul>
     <li>The guest list you import (CSV, Excel file or Google Sheet link) and the scans you record.</li>
-    <li>If you connect ChatGPT, the sign-in tokens for your ChatGPT account, stored in the device keychain.</li>
   </ul>
   <p>Removing the event in the app, or deleting the app, removes this data.</p>
-
-  <h2>ChatGPT column detection (optional)</h2>
-  <p>If you choose Connect ChatGPT, signing in happens on OpenAI's website. When you then import a guest list, the column names and up to eight sample rows are sent to OpenAI under your own ChatGPT account to detect scan modes. Nothing is sent if you do not connect ChatGPT. You can disconnect at any time in the Event tab or in your ChatGPT settings.</p>
 
   <h2>Device sync</h2>
   <p>When you host or join a sync session, the guest list and scan events are relayed between your devices through a temporary room on Cloudflare. Rooms are protected by a one-time secret in the invite and are not used to keep a permanent copy of your data.</p>

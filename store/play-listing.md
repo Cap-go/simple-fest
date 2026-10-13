@@ -34,7 +34,6 @@ GUEST LIST IMPORT FROM CSV, EXCEL OR GOOGLE SHEETS
 • Simple Fest detects the ticket code, guest name, email and paid columns for you
 • Every checkpoint becomes a scan mode: entrance, day passes, meals, drink tokens, wristbands
 • Edit detected columns and scan modes at any time
-• Optional Sign in with ChatGPT for smarter column detection
 
 OFFLINE EVENT CHECK-IN THAT SYNCS
 • Works offline: every scan is saved on the phone first
@@ -55,8 +54,8 @@ First release: import a guest list from CSV, Excel or Google Sheets, scan QR tic
 
 ## Policy answers
 
-- App access: all features work without an account. ChatGPT sign-in (optional) uses the App Review demo account.
+- App access: all features work without an account.
 - Ads: no. Target audience: 18+. Content rating (IARC): utility, no objectionable content.
 - Data safety: no data collected or shared (guest lists stay on device; sync relays messages between the
-  user's own devices; ChatGPT requests go from the device to OpenAI only when the user connects it). Encrypted in transit.
+  user's own devices). Encrypted in transit.
 - Government, financial, health, news: no. Advertising ID: not used.

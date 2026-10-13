@@ -22,13 +22,10 @@ let package = Package(
         .package(name: "CapacitorStatusBar", path: "../../../node_modules/.bun/@capacitor+status-bar@8.0.4+767ac80cbab8ae50/node_modules/@capacitor/status-bar"),
         .package(name: "CapgoCameraPreview", path: "../../../node_modules/.bun/@capgo+camera-preview@8.8.0+767ac80cbab8ae50/node_modules/@capgo/camera-preview"),
         .package(name: "CapgoCapacitorInAppReview", path: "../../../node_modules/.bun/@capgo+capacitor-in-app-review@8.2.7+767ac80cbab8ae50/node_modules/@capgo/capacitor-in-app-review"),
-        .package(name: "CapgoCapacitorInappbrowser", path: "../../../node_modules/.bun/@capgo+capacitor-inappbrowser@8.22.4+767ac80cbab8ae50/node_modules/@capgo/capacitor-inappbrowser"),
         .package(name: "CapgoCapacitorKeepAwake", path: "../../../node_modules/.bun/@capgo+capacitor-keep-awake@8.1.18+767ac80cbab8ae50/node_modules/@capgo/capacitor-keep-awake"),
         .package(name: "CapgoCapacitorNativeNavigation", path: "../../../node_modules/.bun/@capgo+capacitor-native-navigation@8.6.2+767ac80cbab8ae50/node_modules/@capgo/capacitor-native-navigation"),
         .package(name: "CapgoCapacitorUpdater", path: "../../../node_modules/.bun/@capgo+capacitor-updater@8.49.7+767ac80cbab8ae50/node_modules/@capgo/capacitor-updater"),
-        .package(name: "CapgoNativeAudio", path: "../../../node_modules/.bun/@capgo+native-audio@8.4.2+767ac80cbab8ae50/node_modules/@capgo/native-audio"),
-        .package(name: "CapgoOauthLoopback", path: "../../../node_modules/.bun/@capgo+oauth-loopback@file+plugins+oauth-loopback+767ac80cbab8ae50/node_modules/@capgo/oauth-loopback"),
-        .package(name: "CapacitorSecureStoragePlugin", path: "../../../node_modules/.bun/capacitor-secure-storage-plugin@0.13.0+767ac80cbab8ae50/node_modules/capacitor-secure-storage-plugin")
+        .package(name: "CapgoNativeAudio", path: "../../../node_modules/.bun/@capgo+native-audio@8.4.2+767ac80cbab8ae50/node_modules/@capgo/native-audio")
     ],
     targets: [
         .target(
@@ -46,13 +43,10 @@ let package = Package(
                 .product(name: "CapacitorStatusBar", package: "CapacitorStatusBar"),
                 .product(name: "CapgoCameraPreview", package: "CapgoCameraPreview"),
                 .product(name: "CapgoCapacitorInAppReview", package: "CapgoCapacitorInAppReview"),
-                .product(name: "CapgoCapacitorInappbrowser", package: "CapgoCapacitorInappbrowser"),
                 .product(name: "CapgoCapacitorKeepAwake", package: "CapgoCapacitorKeepAwake"),
                 .product(name: "CapgoCapacitorNativeNavigation", package: "CapgoCapacitorNativeNavigation"),
                 .product(name: "CapgoCapacitorUpdater", package: "CapgoCapacitorUpdater"),
-                .product(name: "CapgoNativeAudio", package: "CapgoNativeAudio"),
-                .product(name: "CapgoOauthLoopback", package: "CapgoOauthLoopback"),
-                .product(name: "CapacitorSecureStoragePlugin", package: "CapacitorSecureStoragePlugin")
+                .product(name: "CapgoNativeAudio", package: "CapgoNativeAudio")
             ]
         )
     ]

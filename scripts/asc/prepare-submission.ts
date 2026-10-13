@@ -1,8 +1,7 @@
 // Fills everything App Review needs that the App Store Connect API supports: listing text, URLs,
 // category, age rating, content rights, free price, availability, review contact and the build.
 // App Privacy answers have no API and must be set in App Store Connect.
-// Env: ASC_KEY_ID, ASC_ISSUER_ID, optional BUNDLE_ID, BUILD (defaults to the newest valid build),
-// REVIEW_DEMO_USER / REVIEW_DEMO_PASSWORD (ChatGPT test account for App Review, never committed).
+// Env: ASC_KEY_ID, ASC_ISSUER_ID, optional BUNDLE_ID, BUILD (defaults to the newest valid build).
 // Usage: bun scripts/asc/prepare-submission.ts
 import { api, ok, type Json } from './client'
 
@@ -36,7 +35,6 @@ BUILT FOR REAL EVENTS
 EVERY CHECKPOINT FROM ONE SHEET
 • Entrance, Friday and Saturday day passes, meals, drinks, wristbands
 • Edit detected columns and scan modes at any time
-• Optional Sign in with ChatGPT for smarter column detection
 
 YOUR DATA STAYS YOURS
 • Free, with no account and no ads
@@ -56,7 +54,6 @@ const reviewNotes = `No account is needed to scan tickets.
 3. Type TCK-1001 again: Already scanned. TCK-1003: Not paid.
 4. "Scan Entrance" opens the camera scanner for QR tickets. A sample ticket QR encodes TCK-1002.
 5. The Devices tab hosts a sync room and shows an invite QR for a second device.
-6. Optional AI column detection: Event tab > Connect ChatGPT, sign in with the demo account below. Scanning works without it.
 Microphone and location are never requested; the camera library references those APIs.`
 
 const app = (await ok('GET', `/v1/apps?filter[bundleId]=${bundleId}`)).data[0]
@@ -204,10 +201,7 @@ step('availability: all territories')
 // Review contact: reuse the team's contact from its newest other app.
 const reviewDetail = await api('GET', `/v1/appStoreVersions/${version.id}/appStoreReviewDetail`)
 const contact = await teamReviewContact()
-const demoUser = process.env.REVIEW_DEMO_USER
-const demoPassword = process.env.REVIEW_DEMO_PASSWORD
-const demo = demoUser && demoPassword ? { demoAccountRequired: true, demoAccountName: demoUser, demoAccountPassword: demoPassword } : { demoAccountRequired: false }
-const reviewAttributes = { ...contact, ...demo, notes: reviewNotes }
+const reviewAttributes = { ...contact, demoAccountRequired: false, demoAccountName: null, demoAccountPassword: null, notes: reviewNotes }
 if (reviewDetail.data?.data) {
   await ok('PATCH', `/v1/appStoreReviewDetails/${reviewDetail.data.data.id}`, {
     data: { type: 'appStoreReviewDetails', id: reviewDetail.data.data.id, attributes: reviewAttributes },
