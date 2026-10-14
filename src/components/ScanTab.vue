@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonNote, IonTitle, IonToolbar } from '@ionic/vue'
-import { arrowForward, chevronForward, scan } from 'ionicons/icons'
+import { arrowForward, arrowUndoOutline, chevronForward, scan } from 'ionicons/icons'
 import { useFestival } from '../composables/useFestival'
 import { tapFeedback } from '../native/device'
 import { serviceIcon, statusMeta, timeLabel } from '../ui'
 
 const emit = defineEmits<{ scan: [] }>()
-const { db, activeServiceId, activeService, activeServiceStat, statFor, handleScan, scanLog } = useFestival()
+const { db, activeServiceId, activeService, activeServiceStat, statFor, handleScan, scanLog, undoLastScan } = useFestival()
+// Lets the gate find a guest by name when the QR is lost or unreadable.
+const guestNames = computed(() => {
+  const column = db.value?.schema.nameColumn
+  return column ? [...new Set(db.value?.records.map((record) => record.values[column]?.trim()).filter(Boolean))].slice(0, 2000) : []
+})
 const manualCode = ref('')
 const recentOpen = ref(false)
 
@@ -75,15 +80,23 @@ function submitManual() {
           <IonIcon class="chevron" :icon="chevronForward" aria-hidden="true" />
         </button>
 
+        <IonButton v-if="latest?.status === 'accepted' && latest.event" fill="clear" size="small" @click="undoLastScan(latest.event.id)">
+          <IonIcon slot="start" :icon="arrowUndoOutline" aria-hidden="true" />Undo last scan
+        </IonButton>
+
         <form class="manual" @submit.prevent="submitManual">
           <input
             v-model="manualCode"
-            aria-label="Ticket code or email"
+            aria-label="Ticket code, email or name"
             autocomplete="off"
-            autocapitalize="characters"
+            autocapitalize="none"
             enterkeyhint="go"
-            placeholder="Type ticket code or email"
+            list="guest-names"
+            placeholder="Ticket code, email or name"
           />
+          <datalist id="guest-names">
+            <option v-for="guestName in guestNames" :key="guestName" :value="guestName" />
+          </datalist>
           <IonButton type="submit" shape="round" :disabled="!manualCode.trim()" aria-label="Check ticket">
             <IonIcon slot="icon-only" :icon="arrowForward" aria-hidden="true" />
           </IonButton>

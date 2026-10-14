@@ -12,6 +12,7 @@ export function loadDatabase(): FestivalDb | null {
   return readJson<FestivalDb>(dbKey)
 }
 
+// Throws when the phone storage is full; callers keep the previous state in that case.
 export function saveDatabase(db: FestivalDb) {
   localStorage.setItem(dbKey, JSON.stringify(db))
 }
@@ -61,10 +62,19 @@ export function purgeLegacyAiSettings() {
 }
 
 function readJson<T>(key: string): T | null {
+  const value = localStorage.getItem(key)
+  if (!value) {
+    return null
+  }
   try {
-    const value = localStorage.getItem(key)
-    return value ? (JSON.parse(value) as T) : null
+    return JSON.parse(value) as T
   } catch {
+    // Keep unreadable data aside instead of silently overwriting it.
+    try {
+      localStorage.setItem(`${key}.corrupt`, value)
+    } catch {
+      // Storage full: nothing more we can do.
+    }
     return null
   }
 }

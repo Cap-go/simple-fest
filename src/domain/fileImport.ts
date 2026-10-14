@@ -2,11 +2,11 @@ import Papa from 'papaparse'
 import { exampleCsv } from './sampleSheet'
 import { inferSchemaHeuristically } from './schemaInference'
 import { serviceConsumption } from './scanEngine'
-import type { FestivalDb, GuestRecord, ImportResult, RawRow, SchemaMapping } from './types'
+import type { FestivalDb, GuestRecord, ImportResult, RawRow, ScanService, SchemaMapping } from './types'
 
 export async function importFile(file: File, festivalName: string, deviceId: string): Promise<ImportResult> {
   const extension = file.name.split('.').pop()?.toLowerCase()
-  const rows = extension === 'xlsx' || extension === 'xls' ? await parseWorkbook(file) : await parseCsv(await file.text())
+  const rows = extension === 'xlsx' || extension === 'xls' ? await parseWorkbook(file) : await parseCsv(decodeText(await file.arrayBuffer()))
   return buildDatabase(rows, festivalName || nameFromFile(file.name), deviceId)
 }
 
@@ -55,11 +55,17 @@ export async function buildDatabase(
   }
 }
 export function exportDatabaseCsv(db: FestivalDb) {
-  const scanColumns = db.schema.services.map((service) => `${service.label} local scans`)
+  // Modes removed after scanning still export their scans.
+  const known = new Set(db.schema.services.map((service) => service.id))
+  const removed = [...new Map(db.events.filter((event) => !known.has(event.serviceId)).map((event) => [event.serviceId, event])).values()].map(
+    (event): ScanService => ({ id: event.serviceId, label: event.serviceLabel, kind: 'custom', confidence: 1 }),
+  )
+  const services = [...db.schema.services, ...removed]
+  const scanColumns = services.map((service) => `${service.label} local scans`)
   const columns = uniqueColumns([...db.columns, ...scanColumns])
   const rows = db.records.map((record) => {
     const next: RawRow = { ...record.values }
-    for (const service of db.schema.services) {
+    for (const service of services) {
       const consumption = serviceConsumption(db, record, service)
       const localTimestamps = consumption.localEvents.map((event) => event.scannedAt)
       const auditColumn = `${service.label} local scans`
@@ -114,8 +120,13 @@ export function toCsvExportUrl(input: string) {
 
   const url = new URL(trimmed)
   if (url.hostname.includes('docs.google.com') && url.pathname.includes('/spreadsheets/d/')) {
-    const match = url.pathname.match(/\/spreadsheets\/d\/([^/]+)/)
     const gid = url.hash.match(/gid=(\d+)/)?.[1] ?? url.searchParams.get('gid') ?? '0'
+    // "Publish to web" links: /spreadsheets/d/e/<id>/pubhtml
+    const published = url.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/)
+    if (published?.[1]) {
+      return `https://docs.google.com/spreadsheets/d/e/${published[1]}/pub?output=csv&gid=${gid}`
+    }
+    const match = url.pathname.match(/\/spreadsheets\/d\/([^/]+)/)
     if (match?.[1]) {
       return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv&gid=${gid}`
     }
@@ -124,34 +135,77 @@ export function toCsvExportUrl(input: string) {
   return trimmed
 }
 
-async function parseCsv(csv: string): Promise<RawRow[]> {
+// Spreadsheet apps on Windows still save CSV as Windows-1252: fall back when the bytes are not UTF-8.
+export function decodeText(buffer: ArrayBuffer) {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buffer)
+  } catch {
+    return new TextDecoder('windows-1252').decode(buffer)
+  }
+}
+
+export async function parseCsv(csv: string): Promise<RawRow[]> {
   return new Promise((resolve, reject) => {
-    Papa.parse<RawRow>(csv, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim(),
-      transform: (value) => String(value ?? '').trim(),
+    Papa.parse<string[]>(csv, {
+      header: false,
+      skipEmptyLines: 'greedy',
       complete: (result) => {
-        if (result.errors.length) {
-          reject(new Error(result.errors[0]?.message ?? 'CSV parse failed'))
+        // Short or long rows are kept; only a broken file (e.g. an unclosed quote) fails.
+        const fatal = result.errors.find((error) => error.type !== 'FieldMismatch' && error.code !== 'UndetectableDelimiter')
+        if (fatal && result.data.length === 0) {
+          reject(new Error(fatal.message || 'CSV parse failed'))
           return
         }
-        resolve(result.data.filter((row) => Object.values(row).some((value) => String(value ?? '').trim())))
+        resolve(rowsFromMatrix(result.data))
       },
       error: (error: Error) => reject(error),
     })
   })
 }
 
+// Uses the first line that looks like a header, so a title line above the columns is skipped.
+export function rowsFromMatrix(matrix: unknown[][]): RawRow[] {
+  const cells = matrix.map((row) => row.map((value) => String(value ?? '').trim()))
+  const filled = (row: string[]) => row.filter(Boolean).length
+  const widest = Math.max(0, ...cells.slice(0, 20).map(filled))
+  const headerIndex = cells.findIndex((row, index) => index < 20 && filled(row) >= Math.max(Math.min(2, widest), Math.ceil(widest * 0.6)))
+  if (headerIndex < 0) {
+    return []
+  }
+  const header = uniqueHeaders(cells[headerIndex])
+  return cells
+    .slice(headerIndex + 1)
+    .filter((row) => filled(row) > 0)
+    .map((row) => Object.fromEntries(header.flatMap((name, index) => (name ? [[name, row[index] ?? '']] : []))))
+}
+
+function uniqueHeaders(header: string[]) {
+  const seen = new Map<string, number>()
+  return header.map((name) => {
+    if (!name) {
+      return ''
+    }
+    const count = (seen.get(name) ?? 0) + 1
+    seen.set(name, count)
+    return count === 1 ? name : `${name} ${count}`
+  })
+}
+
 async function parseWorkbook(file: File): Promise<RawRow[]> {
   const XLSX = await import('xlsx')
   const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' })
-  const sheetName = workbook.SheetNames[0]
-  if (!sheetName) {
+  if (workbook.SheetNames.length === 0) {
     throw new Error('Workbook has no sheets')
   }
-  const sheet = workbook.Sheets[sheetName]
-  return XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: '', raw: false }).map((row) => normalizeRow(row))
+  // First sheet that has a guest list on it.
+  for (const sheetName of workbook.SheetNames) {
+    const matrix = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName], { header: 1, defval: '', raw: false })
+    const rows = rowsFromMatrix(matrix)
+    if (rows.length > 0) {
+      return rows
+    }
+  }
+  return []
 }
 
 function normalizeRows(rows: RawRow[]) {

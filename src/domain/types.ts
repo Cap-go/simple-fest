@@ -2,8 +2,6 @@ export type ScanKind = 'entrance' | 'day' | 'food' | 'drink' | 'custom'
 
 export type RawRow = Record<string, string>
 
-// Sends instructions plus input to a language model and resolves with its text answer.
-
 export type ScanService = {
   id: string
   label: string
@@ -42,6 +40,8 @@ export type ScanEvent = {
   payload: string
   deviceId: string
   scannedAt: string
+  // Set on an undo event: the id of the scan it reverts.
+  undoOf?: string
 }
 
 export type FestivalDb = {

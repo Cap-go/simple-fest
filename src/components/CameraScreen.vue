@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { App } from '@capacitor/app'
 import { Capacitor, type PluginListenerHandle } from '@capacitor/core'
 import { IonButton, IonIcon } from '@ionic/vue'
-import { arrowForward, chevronBack, keypadOutline } from 'ionicons/icons'
+import { arrowForward, arrowUndoOutline, chevronBack, keypadOutline, refreshOutline } from 'ionicons/icons'
 import { useCapgoQrScanner } from '../composables/useCapgoQrScanner'
 import { useFestival } from '../composables/useFestival'
 import type { ScanResult } from '../domain/types'
@@ -14,7 +14,7 @@ import ResultCard from './ResultCard.vue'
 const props = defineProps<{ mode: 'scan' | 'join' }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { db, activeService, activeServiceId, activeServiceStat, handleScan, joinFromText } = useFestival()
+const { db, activeService, activeServiceId, activeServiceStat, handleScan, joinFromText, undoLastScan, askForReview, syncStatus } = useFestival()
 const ready = ref(false)
 const result = ref<ScanResult | null>(null)
 const scanCount = ref(0)
@@ -23,6 +23,15 @@ const manualCode = ref('')
 let resetTimer: number | undefined
 
 const scanner = useCapgoQrScanner(ready, onScanned, '.camera-viewport')
+const isNative = Capacitor.isNativePlatform()
+const cameraError = computed(() => scanner.error.value)
+// Gate staff must see when this phone stops sharing scans.
+const syncText = computed(() => {
+  const mode = syncStatus.value.mode
+  if (mode === 'off') return ''
+  if (mode === 'hosting' || mode === 'connected') return ' · Live'
+  return ' · Reconnecting'
+})
 const frameTone = computed(() => (result.value ? statusMeta(result.value.status).tone : 'idle'))
 const hint = computed(() => {
   if (scanner.error.value) {
@@ -69,7 +78,22 @@ function show(next: ScanResult) {
   result.value = next
   scanCount.value += 1
   window.clearTimeout(resetTimer)
-  resetTimer = window.setTimeout(() => (result.value = null), next.status === 'accepted' ? 2200 : 3500)
+  resetTimer = window.setTimeout(() => (result.value = null), next.status === 'accepted' ? 3000 : 3500)
+}
+
+function undo() {
+  const eventId = result.value?.event?.id
+  if (eventId && undoLastScan(eventId)) {
+    window.clearTimeout(resetTimer)
+    result.value = null
+  }
+}
+
+function close() {
+  if (props.mode === 'scan') {
+    askForReview()
+  }
+  emit('close')
 }
 
 function submitManual() {
@@ -92,11 +116,11 @@ function selectMode(id: string) {
     <div id="camera-preview" class="camera-viewport" />
 
     <header class="top">
-      <IonButton class="round" fill="clear" aria-label="Close scanner" @click="emit('close')">
+      <IonButton class="round" fill="clear" aria-label="Close scanner" @click="close">
         <IonIcon slot="icon-only" :icon="chevronBack" aria-hidden="true" />
       </IonButton>
       <div class="title">
-        <small>{{ mode === 'join' ? 'Join device' : db?.name }}</small>
+        <small>{{ mode === 'join' ? 'Join device' : `${db?.name ?? ''}${syncText}` }}</small>
         <strong>{{ mode === 'join' ? 'Scan invite' : activeService?.label }}</strong>
       </div>
       <span v-if="mode === 'scan'" class="counter" aria-label="Scanned of eligible">
@@ -125,6 +149,12 @@ function selectMode(id: string) {
       <footer class="bottom">
         <ResultCard v-if="result" :key="scanCount" :result="result" :db="db" :mode="activeService?.label" />
         <p v-else class="hint" role="status">{{ hint }}</p>
+        <IonButton v-if="result?.status === 'accepted' && result.event" class="manual-toggle" fill="clear" @click="undo">
+          <IonIcon slot="start" :icon="arrowUndoOutline" aria-hidden="true" />Undo this scan
+        </IonButton>
+        <IonButton v-else-if="cameraError && isNative" class="manual-toggle" fill="clear" @click="scanner.start()">
+          <IonIcon slot="start" :icon="refreshOutline" aria-hidden="true" />Try the camera again
+        </IonButton>
 
         <form v-if="manualOpen" class="manual" @submit.prevent="submitManual">
           <input

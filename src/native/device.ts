@@ -9,7 +9,7 @@ import { CapgoInAppReview } from '@capgo/capacitor-in-app-review'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { KeepAwake } from '@capgo/capacitor-keep-awake'
 import { NativeAudio } from '@capgo/native-audio'
-import { toastController } from '@ionic/vue'
+import { alertController, toastController } from '@ionic/vue'
 import { alertCircle, checkmarkCircle, informationCircle, warning } from 'ionicons/icons'
 import { exampleCsv } from '../domain/sampleSheet'
 import type { ScanStatus } from '../domain/types'
@@ -107,6 +107,22 @@ export async function notify(kind: 'success' | 'error' | 'info' | 'warning', tit
     ...toastStyle[kind],
   })
   await toast.present()
+}
+
+// Three-way choice before a list replaces scans on this phone. Resolves 'export', 'replace' or 'cancel'.
+export async function confirmReplace(header: string, message: string): Promise<'export' | 'replace' | 'cancel'> {
+  const alert = await alertController.create({
+    header,
+    message,
+    buttons: [
+      { text: 'Cancel', role: 'cancel' },
+      { text: 'Export scans first', role: 'export' },
+      { text: 'Replace', role: 'destructive' },
+    ],
+  })
+  await alert.present()
+  const { role } = await alert.onDidDismiss()
+  return role === 'export' ? 'export' : role === 'destructive' ? 'replace' : 'cancel'
 }
 
 export async function copyText(value: string) {

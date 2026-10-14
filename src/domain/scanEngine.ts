@@ -26,10 +26,10 @@ export function applyScan(db: FestivalDb, serviceId: string, payload: string, de
   }
 
   const evaluation = evaluateMatches(db, service, matches)
-  if (!evaluation.record) {
+  if (evaluation.reason) {
     return {
       db,
-      result: blockedResult(evaluation.reason, service, payload, matches[0]),
+      result: blockedResult(evaluation.reason, service, payload, evaluation.blocked),
     }
   }
 
@@ -60,6 +60,23 @@ export function applyScan(db: FestivalDb, serviceId: string, payload: string, de
       event,
     ),
   }
+}
+
+// Reverts one accepted scan. The undo is its own event so it syncs like any scan.
+export function undoScan(db: FestivalDb, eventId: string, deviceId: string, scannedAt = new Date().toISOString()) {
+  const target = db.events.find((event) => event.id === eventId && !event.undoOf)
+  if (!target || undoneIds(db).has(eventId)) {
+    return null
+  }
+  const undo: ScanEvent = { ...target, id: randomId('undo'), undoOf: target.id, deviceId, scannedAt }
+  return { ...db, updatedAt: scannedAt, events: mergeScanEvents([...db.events, undo]) }
+}
+
+// True when a guest has more scans than allowed, e.g. two phones accepted the same ticket offline.
+export function isOverCapacity(db: FestivalDb, recordId: string, serviceId: string) {
+  const record = db.records.find((item) => item.localId === recordId)
+  const service = db.schema.services.find((item) => item.id === serviceId)
+  return Boolean(record && service && consumedCount(db, record, service) > capacityFor(record, service, db))
 }
 
 export function mergeRemoteScanEvent(db: FestivalDb, event: ScanEvent): FestivalDb {
@@ -97,48 +114,71 @@ export function normalizePayload(value: string) {
   return value.trim().toLowerCase()
 }
 
-function matchingRecords(db: FestivalDb, payload: string) {
-  const columns = [db.schema.codeColumn, db.schema.emailColumn, db.schema.idColumn].filter(Boolean) as string[]
-  return db.records.filter((record) => {
-    if (columns.length === 0) {
-      return false
+// Compare codes without case or spaces, so "ABC 123" and "abc123" match.
+function compact(value: string) {
+  return normalizePayload(value).replace(/\s+/g, '')
+}
+
+// Ticket QRs are often links: also try the last path segment and query values.
+function payloadCandidates(payload: string) {
+  const candidates = new Set([compact(payload)])
+  try {
+    const url = new URL(payload.trim())
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      const segment = url.pathname.split('/').filter(Boolean).at(-1)
+      if (segment) {
+        candidates.add(compact(decodeURIComponent(segment)))
+      }
+      for (const value of url.searchParams.values()) {
+        candidates.add(compact(value))
+      }
     }
-    return columns.some((column) => normalizePayload(readColumn(record, column)) === payload)
-  })
+  } catch {
+    // Not a URL.
+  }
+  candidates.delete('')
+  return candidates
+}
+
+// The ticket code wins over email, email over ID, ID over name: one guest's email can never shadow another's code.
+function matchingRecords(db: FestivalDb, payload: string) {
+  const candidates = payloadCandidates(payload)
+  const columns = [db.schema.codeColumn, db.schema.emailColumn, db.schema.idColumn, db.schema.nameColumn].filter(Boolean) as string[]
+  for (const column of [...new Set(columns)]) {
+    const matches = db.records.filter((record) => candidates.has(compact(readColumn(record, column))))
+    if (matches.length > 0) {
+      return matches
+    }
+  }
+  return []
 }
 
 function evaluateMatches(db: FestivalDb, service: ScanService, matches: GuestRecord[]) {
-  let unpaid = 0
-  let notEntitled = 0
-  let duplicate = 0
+  const blocked: Partial<Record<'unpaid' | 'not_entitled' | 'duplicate', GuestRecord>> = {}
 
   for (const record of matches) {
     if (!isPaid(record, db)) {
-      unpaid += 1
+      blocked.unpaid ??= record
       continue
     }
 
     const capacity = capacityFor(record, service, db)
     if (capacity <= 0) {
-      notEntitled += 1
+      blocked.not_entitled ??= record
       continue
     }
 
     if (consumedCount(db, record, service) >= capacity) {
-      duplicate += 1
+      blocked.duplicate ??= record
       continue
     }
 
     return { record }
   }
 
-  if (duplicate > 0 && duplicate >= unpaid + notEntitled) {
-    return { reason: 'duplicate' as const }
-  }
-  if (unpaid > 0 && unpaid >= notEntitled) {
-    return { reason: 'unpaid' as const }
-  }
-  return { reason: 'not_entitled' as const }
+  // Report the most useful reason, and the guest it applies to.
+  const reason = blocked.duplicate ? 'duplicate' : blocked.not_entitled ? 'not_entitled' : 'unpaid'
+  return { reason, blocked: blocked[reason] } as const
 }
 
 function blockedResult(reason: 'duplicate' | 'unpaid' | 'not_entitled', service: ScanService, payload: string, record?: GuestRecord): ScanResult {
@@ -176,7 +216,10 @@ function capacityFor(record: GuestRecord, service: ScanService, db: FestivalDb) 
 }
 
 export function serviceConsumption(db: FestivalDb, record: GuestRecord, service: ScanService) {
-  const localEvents = db.events.filter((event) => event.recordId === record.localId && event.serviceId === service.id)
+  const undone = undoneIds(db)
+  const localEvents = db.events.filter(
+    (event) => !event.undoOf && !undone.has(event.id) && event.recordId === record.localId && event.serviceId === service.id,
+  )
   const sourceValue = service.consumedColumn ? readColumn(record, service.consumedColumn) : ''
   const sourceCount = consumedValueCount(sourceValue)
   return {
@@ -195,20 +238,45 @@ function readColumn(record: GuestRecord, column?: string) {
   return column ? record.values[column] ?? '' : ''
 }
 
-function truthy(value: string) {
+function undoneIds(db: FestivalDb) {
+  return new Set(db.events.flatMap((event) => (event.undoOf ? [event.undoOf] : [])))
+}
+
+const falseWords =
+  /^(false|no|non|n|none|nope|0|unpaid|not paid|non paye|impaye|pending|en attente|waiting|awaiting payment|processing|failed|declined|expired|cancelled|canceled|annule|refunded|refund|rembourse|invalid|ko|-)$/
+
+// Reads yes/no cells: "yes", "x", a date or a positive amount count as true; "pending", "0,00 €" or "non payé" as false.
+export function truthy(value: string) {
   const normalized = normalizePayload(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_]+/g, ' ')
+    .replace(/\s+/g, ' ')
   if (!normalized) {
     return false
   }
-  if (/^(false|no|non|0|unpaid|not paid|cancelled|canceled|refunded|invalid|ko)$/.test(normalized)) {
+  if (falseWords.test(normalized)) {
     return false
+  }
+  const amount = amountValue(normalized)
+  if (amount !== null) {
+    return amount > 0
   }
   return true
 }
 
+// "12", "0.00", "0,00 €", "$5", "EUR 10" -> number; anything else -> null.
+function amountValue(value: string) {
+  const stripped = value.replace(/[€$£¥]|\b(eur|usd|gbp|chf)\b/g, '').replace(/\s+/g, '')
+  if (!/^-?\d+(?:[.,]\d+)?$/.test(stripped)) {
+    return null
+  }
+  return Number.parseFloat(stripped.replace(',', '.'))
+}
+
 function numberValue(value: string) {
-  const parsed = Number.parseFloat(value.replace(',', '.'))
-  if (Number.isFinite(parsed)) {
+  const parsed = amountValue(normalizePayload(value))
+  if (parsed !== null) {
     return parsed
   }
   return truthy(value) ? 1 : 0

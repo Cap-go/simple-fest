@@ -217,6 +217,36 @@ describe('SyncController', () => {
       ])
     })
 
+    it('does not replay scans of another festival into the room', () => {
+      FakeSocket.instances = []
+      const otherDb = { ...db, id: 'old-festival', events: [scanEvent] }
+      const controller = new SyncController(
+        { getDatabase: () => otherDb, onSnapshot: () => undefined, onScanEvent: () => undefined, onStatus: () => undefined },
+        { backendUrl: 'https://sync.example.com', createSocket: (url) => new FakeSocket(url) as unknown as WebSocket },
+      )
+      controller.join(invite, 'peer-device')
+      FakeSocket.instances[0]?.open()
+      expect(FakeSocket.instances[0]?.sent.map((message) => message.kind)).toEqual(['hello', 'request-snapshot'])
+    })
+
+    it('answers a host snapshot with the scans the host is missing', () => {
+      FakeSocket.instances = []
+      const peerDb = { ...db, events: [scanEvent] }
+      const controller = new SyncController(
+        { getDatabase: () => peerDb, onSnapshot: () => undefined, onScanEvent: () => undefined, onStatus: () => undefined },
+        { backendUrl: 'https://sync.example.com', createSocket: (url) => new FakeSocket(url) as unknown as WebSocket },
+      )
+      controller.join(invite, 'peer-device')
+      const socket = FakeSocket.instances[0]
+      socket?.open()
+      socket!.sent = []
+      socket?.receive({ kind: 'snapshot', secret: invite.secret, db })
+      expect(socket?.sent).toEqual([{ kind: 'scan-event', secret: invite.secret, event: scanEvent }])
+      socket!.sent = []
+      socket?.receive({ kind: 'snapshot', secret: invite.secret, db: peerDb })
+      expect(socket?.sent).toEqual([])
+    })
+
     it('forgets the session when sync is stopped', () => {
       const { controller } = createController()
       controller.restore({ invite, role: 'host' })

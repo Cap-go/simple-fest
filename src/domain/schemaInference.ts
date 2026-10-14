@@ -7,15 +7,21 @@ type ColumnScore = {
 
 const scanWords = ['scan', 'scanned', 'used', 'consumed', 'taken', 'validated', 'checked', 'arrive', 'arrived', 'arrival']
 const ignoredServiceWords = ['vegetarian', 'vegetarien', 'vegan', 'allergy', 'allergies', 'comment', 'note', 'phone', 'telephone']
+// Our own export adds "<mode> local scans" audit columns; they are history, not new scan modes.
+const auditColumnPattern = /^(.*) local scans$/
 
 export function inferSchemaHeuristically(rows: RawRow[]): SchemaMapping {
   const columns = columnsFromRows(rows)
   const normalized = new Map(columns.map((column) => [column, normalizeHeader(column)]))
-  const idColumn = bestColumn(columns, normalized, ['ticket id', 'ticket', 'id', 'order id', 'booking id', 'reservation id'])
-  const emailColumn = bestColumn(columns, normalized, ['email', 'mail', 'e-mail', 'courriel'])
-  const codeColumn = bestColumn(columns, normalized, ['qr code', 'qr', 'barcode', 'bar code', 'code', 'ticket code', 'pass code']) ?? emailColumn ?? idColumn
-  const nameColumn = bestColumn(columns, normalized, ['name', 'nom', 'full name', 'prenom', 'first name', 'last name'])
-  const paidColumn = bestColumn(columns, normalized, [
+  const roleColumns = columns.filter((column) => !auditColumnPattern.test(normalized.get(column) ?? ''))
+  const idColumn = bestColumn(roleColumns, normalized, ['ticket id', 'ticket', 'id', 'order id', 'booking id', 'reservation id'], /discount|promo|coupon|voucher/)
+  const emailColumn = bestColumn(roleColumns, normalized, ['email', 'mail', 'e-mail', 'courriel'])
+  const codeColumn =
+    bestColumn(roleColumns, normalized, ['qr code', 'qr', 'barcode', 'bar code', 'code', 'ticket code', 'pass code'], /discount|promo|coupon|voucher|postal|zip/) ??
+    emailColumn ??
+    idColumn
+  const nameColumn = bestColumn(roleColumns, normalized, ['name', 'nom', 'full name', 'prenom', 'first name', 'last name'])
+  const paidColumn = bestColumn(roleColumns, normalized, [
     'paid',
     'payment',
     'payment status',
@@ -28,7 +34,7 @@ export function inferSchemaHeuristically(rows: RawRow[]): SchemaMapping {
     'amount',
     'stripe',
     'mollie',
-  ])
+  ], /method|mode|type|moyen|means/)
   const services = inferServices(columns, normalized)
   const warnings: string[] = []
 
@@ -81,7 +87,9 @@ export function normalizeHeader(value: string): string {
     .trim()
 }
 
-function inferServices(columns: string[], normalized: Map<string, string>): ScanService[] {
+function inferServices(allColumns: string[], normalized: Map<string, string>): ScanService[] {
+  const auditColumns = allColumns.filter((column) => auditColumnPattern.test(normalized.get(column) ?? ''))
+  const columns = allColumns.filter((column) => !auditColumns.includes(column))
   const consumedColumns = new Map<string, string>()
 
   for (const column of columns) {
@@ -139,19 +147,37 @@ function inferServices(columns: string[], normalized: Map<string, string>): Scan
     })
   }
 
+  // A plain guest list gets one Entrance mode. When the sheet already has day passes, meals or tokens,
+  // an invented Entrance would let every paid guest in, so it is only added for an explicit arrival column.
   if (!services.some((service) => service.kind === 'entrance')) {
-    const arrival = columns.find((column) => /arriv|entrance|entry|check in|checkin/.test(normalized.get(column) ?? ''))
-    services.unshift({
-      id: 'entrance',
-      label: 'Entrance',
-      kind: 'entrance',
-      consumedColumn: arrival,
-      confidence: arrival ? 0.78 : 0.48,
-      notes: arrival ? undefined : 'Generated default entrance scan mode.',
-    })
+    const arrival = columns.find((column) => /\barriv|\b(entrance|entry|check in|checkin)\b/.test(normalized.get(column) ?? ''))
+    const entranceAudit = auditColumns.find((column) => auditBase(normalized.get(column)) === 'entrance')
+    if (arrival || entranceAudit || services.length === 0) {
+      services.unshift({
+        id: 'entrance',
+        label: 'Entrance',
+        kind: 'entrance',
+        consumedColumn: arrival ?? entranceAudit,
+        confidence: arrival ? 0.78 : 0.48,
+        notes: arrival ? undefined : 'Generated default entrance scan mode.',
+      })
+    }
   }
 
-  return sortServices(services).slice(0, 24)
+  // Re-imported export: a mode without its own scanned column keeps its history from the audit column.
+  for (const column of auditColumns) {
+    const base = auditBase(normalized.get(column))
+    const service = services.find((item) => normalizeHeader(item.label) === base)
+    if (service && !service.consumedColumn) {
+      service.consumedColumn = column
+    }
+  }
+
+  return sortServices(services)
+}
+
+function auditBase(header = '') {
+  return header.match(auditColumnPattern)?.[1]?.trim() ?? ''
 }
 
 function sortServices(services: ScanService[]) {
@@ -176,19 +202,24 @@ function serviceKindPriority(kind: ScanKind) {
   }
 }
 
-function bestColumn(columns: string[], normalized: Map<string, string>, targets: string[]): string | undefined {
+// Matches whole words only: "Paid" must not count as an "id" column, "Validity" neither.
+function bestColumn(columns: string[], normalized: Map<string, string>, targets: string[], exclude?: RegExp): string | undefined {
   const scores: ColumnScore[] = columns.map((column) => {
     const header = normalized.get(column) ?? ''
+    if (exclude?.test(header)) {
+      return { column, score: 0 }
+    }
+    const headerWords = header.split(' ')
     const score = targets.reduce((best, target) => {
       const normalizedTarget = normalizeHeader(target)
       if (header === normalizedTarget) {
         return Math.max(best, 100)
       }
-      if (header.includes(normalizedTarget)) {
+      if (hasPhrase(header, normalizedTarget)) {
         return Math.max(best, 75)
       }
       const words = normalizedTarget.split(' ')
-      if (words.every((word) => header.includes(word))) {
+      if (words.every((word) => headerWords.includes(word))) {
         return Math.max(best, 60)
       }
       return best
@@ -213,6 +244,10 @@ function confidenceFor(input: { codeColumn?: string; paidColumn?: string; servic
   return Number(Math.min(0.95, confidence).toFixed(2))
 }
 
+function hasPhrase(header: string, phrase: string) {
+  return ` ${header} `.includes(` ${phrase} `)
+}
+
 function isRoleColumn(header: string) {
   return /^(id|ticket id|order id|name|nom|prenom|first name|last name|email|mail|qr|qr code|barcode|code)$/.test(header)
 }
@@ -225,27 +260,36 @@ function looksLikeConsumedOnly(header: string) {
   return isConsumedColumn(header) && !looksLikeQuota(header)
 }
 
+// Header keywords are whole words (plural allowed), so "Bar" does not match "Barbecue" and "day" not "Birthday".
+const wordPattern = (list: string) => new RegExp(`\\b(${list})(?:e?s)?\\b`)
+const entranceWords = wordPattern('entrance|entry|admission|check ?in|entree|arrival|arrivee|arrived|arrive')
+const drinkWords = wordPattern('drink|bar|beer|wine|beverage|boisson|verre')
+const foodWords = wordPattern('food|meal|breakfast|lunch|dinner|dejeuner|diner|petit dej|petit dejeuner|repas|bbq|barbecue')
+const dayWords = wordPattern(
+  'day|jour|vendredi|samedi|dimanche|lundi|mardi|mercredi|jeudi|friday|saturday|sunday|monday|tuesday|wednesday|thursday|weekend',
+)
+const entitlementWords = wordPattern('pass|ticket|token')
+const quotaWords = wordPattern('token|quota|credit|quantity|qty|count|number|nombre')
+
 function looksLikeEntitlement(header: string) {
-  return /pass|meal|food|drink|token|breakfast|lunch|dinner|dejeuner|diner|petit dej|repas|bar|beer|wine|day|jour|vendredi|samedi|dimanche|lundi|friday|saturday|sunday|monday|ticket|entree|entrance/.test(
-    header,
-  )
+  return [entitlementWords, entranceWords, drinkWords, foodWords, dayWords].some((pattern) => pattern.test(header))
 }
 
 function looksLikeQuota(header: string) {
-  return /tokens?|quota|credit|credits|quantity|qty|count|number|nombre/.test(header)
+  return quotaWords.test(header)
 }
 
 function kindForHeader(header: string): ScanKind {
-  if (/entrance|entry|admission|arriv|check in|checkin|entree/.test(header)) {
+  if (entranceWords.test(header)) {
     return 'entrance'
   }
-  if (/drink|bar|beer|wine|beverage|boisson|verre/.test(header)) {
+  if (drinkWords.test(header)) {
     return 'drink'
   }
-  if (/food|meal|breakfast|lunch|dinner|dejeuner|diner|petit dej|repas/.test(header)) {
+  if (foodWords.test(header)) {
     return 'food'
   }
-  if (/day|jour|vendredi|samedi|dimanche|lundi|mardi|mercredi|jeudi|friday|saturday|sunday|monday|tuesday|wednesday|thursday/.test(header)) {
+  if (dayWords.test(header)) {
     return 'day'
   }
   return 'custom'
@@ -264,7 +308,7 @@ function findMatchingConsumedColumn(base: string, consumedColumns: Map<string, s
   }
 
   for (const [candidate, column] of consumedColumns) {
-    if (candidate.includes(base) || base.includes(candidate)) {
+    if (candidate && base && (hasPhrase(candidate, base) || hasPhrase(base, candidate))) {
       return column
     }
   }

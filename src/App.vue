@@ -29,7 +29,8 @@ const title = computed(() => (tab.value === 'scan' ? (db.value?.name ?? 'Simple 
 const syncOn = computed(() => syncStatus.value.mode === 'hosting' || syncStatus.value.mode === 'connected')
 const syncLabel = computed(() => {
   if (syncOn.value) return syncStatus.value.peers > 0 ? `${syncStatus.value.peers + 1} devices` : 'Live'
-  return syncStatus.value.mode === 'reconnecting' || syncStatus.value.mode === 'paused' ? 'Reconnecting' : 'Offline'
+  // Sync off is normal: scans are saved on the phone, so do not call it "Offline".
+  return syncStatus.value.mode === 'reconnecting' || syncStatus.value.mode === 'paused' ? 'Reconnecting' : 'This phone'
 })
 
 // iOS large titles: big at the top of a page, collapsing to the small centered title on scroll.

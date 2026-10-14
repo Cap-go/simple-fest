@@ -14,10 +14,10 @@ import {
   saveDatabase,
   saveSyncSession,
 } from '../domain/localStore'
-import { applyScan, mergeRemoteScanEvent, serviceStats } from '../domain/scanEngine'
+import { applyScan, displayName, isOverCapacity, mergeRemoteScanEvent, serviceStats, undoScan } from '../domain/scanEngine'
 import { SyncController, decodeInvite, encodeInvite } from '../domain/syncTransport'
-import type { FestivalDb, ScanResult, ScanService, SchemaMapping, SyncInvite, SyncStatus } from '../domain/types'
-import { maybeRequestReview, notify, saveCsv, scanFeedback } from '../native/device'
+import type { FestivalDb, ScanEvent, ScanResult, ScanService, SchemaMapping, SyncInvite, SyncStatus } from '../domain/types'
+import { confirmReplace, maybeRequestReview, notify, saveCsv, scanFeedback } from '../native/device'
 
 export type RoleColumn = 'idColumn' | 'codeColumn' | 'nameColumn' | 'emailColumn' | 'paidColumn'
 export type ScanLogEntry = ScanResult & { id: string; at: string; serviceLabel: string; guest?: string }
@@ -32,7 +32,9 @@ const activeServiceId = ref<string | null>(
 )
 watch(activeServiceId, saveActiveMode)
 const lastResult = ref<ScanResult | null>(null)
-const scanLog = ref<ScanLogEntry[]>([])
+const scanLog = ref<ScanLogEntry[]>(restoreScanLog(db.value))
+// Scan events that arrive before this phone has the guest list.
+let pendingEvents: ScanEvent[] = []
 const syncStatus = ref<SyncStatus>({ mode: 'off', peers: 0, message: 'Sync off' })
 const syncInvite = ref<SyncInvite | null>(null)
 const syncInviteText = ref('')
@@ -48,16 +50,31 @@ const sync = new SyncController({
   getDatabase: () => db.value,
   onSnapshot: (remoteDb) => {
     const isNewFestival = db.value?.id !== remoteDb.id
-    setAndSaveDb(mergeDatabases(db.value, remoteDb))
+    let next = mergeDatabases(db.value, remoteDb)
+    for (const event of pendingEvents) {
+      next = mergeRemoteScanEvent(next, event)
+    }
+    pendingEvents = []
+    if (!setAndSaveDb(next)) {
+      return
+    }
     if (isNewFestival) {
       activeServiceId.value = remoteDb.schema.services[0]?.id ?? null
+      scanLog.value = []
       notify('success', `Joined ${remoteDb.name}`, `${remoteDb.records.length} guests synced`)
     }
   },
   onScanEvent: (event) => {
-    if (db.value) {
-      setAndSaveDb(mergeRemoteScanEvent(db.value, event))
+    const festivalId = sync.currentSession?.invite.festivalId
+    if (!db.value || db.value.id !== festivalId) {
+      pendingEvents = [...pendingEvents, event].slice(-5000)
+      return
     }
+    const known = db.value.events.some((existing) => existing.id === event.id)
+    if (!setAndSaveDb(mergeRemoteScanEvent(db.value, event)) || known || event.undoOf) {
+      return
+    }
+    warnOnDoubleScan(db.value, event)
   },
   onStatus: (status) => {
     syncStatus.value = status
@@ -91,15 +108,71 @@ function statFor(serviceId?: string) {
   return serviceId ? stats.value.find((item) => item.serviceId === serviceId) : undefined
 }
 
-function setAndSaveDb(nextDb: FestivalDb | null) {
-  db.value = nextDb
-  if (!nextDb) {
-    return
+// Saves first, then updates the screen: a scan is only shown as accepted once it is stored.
+function setAndSaveDb(nextDb: FestivalDb) {
+  try {
+    saveDatabase(nextDb)
+  } catch {
+    notify('error', 'Phone storage is full', 'This scan was not saved. Free some space or export and remove old events.')
+    return false
   }
-  saveDatabase(nextDb)
+  db.value = nextDb
   if (!nextDb.schema.services.some((service) => service.id === activeServiceId.value)) {
     activeServiceId.value = nextDb.schema.services[0]?.id ?? null
   }
+  return true
+}
+
+// Two phones can both accept one ticket while offline. Tell the gate as soon as the second scan arrives.
+function warnOnDoubleScan(current: FestivalDb, event: ScanEvent) {
+  if (!isOverCapacity(current, event.recordId, event.serviceId)) {
+    return
+  }
+  const record = current.records.find((item) => item.localId === event.recordId)
+  const guest = record ? displayName(record, current) : event.payload
+  notify('warning', 'Scanned on two phones', `${guest} was also accepted on another phone for ${event.serviceLabel}.`)
+  if (lastResult.value?.event?.recordId === event.recordId && lastResult.value.event.serviceId === event.serviceId) {
+    lastResult.value = { ...lastResult.value, status: 'duplicate', title: 'Also scanned on another phone' }
+  }
+}
+
+function restoreScanLog(current: FestivalDb | null): ScanLogEntry[] {
+  if (!current) {
+    return []
+  }
+  const undone = new Set(current.events.flatMap((event) => (event.undoOf ? [event.undoOf] : [])))
+  return current.events
+    .filter((event) => event.deviceId === deviceId && !event.undoOf && !undone.has(event.id))
+    .slice(-50)
+    .reverse()
+    .map((event) => {
+      const record = current.records.find((item) => item.localId === event.recordId)
+      return {
+        status: 'accepted' as const,
+        title: 'Accepted',
+        detail: '',
+        payload: event.payload,
+        record,
+        event,
+        id: event.id,
+        at: event.scannedAt,
+        serviceLabel: event.serviceLabel,
+        guest: record ? guestName(record.values, current.schema) : undefined,
+      }
+    })
+}
+
+// Replacing the list drops every scan of the current event: ask first, and offer an export.
+async function confirmReplaceList(header: string) {
+  if (!db.value?.events.length) {
+    return true
+  }
+  const choice = await confirmReplace(header, `${db.value.events.length} scans of ${db.value.name} are stored on this phone and will be removed.`)
+  if (choice === 'export') {
+    await exportCsv()
+    return false
+  }
+  return choice === 'replace'
 }
 
 function resetSyncState() {
@@ -110,6 +183,9 @@ function resetSyncState() {
 }
 
 async function runImport(source: { kind: 'file'; file: File } | { kind: 'sheet'; url: string } | { kind: 'example' }, name: string) {
+  if (!(await confirmReplaceList('Replace the guest list?'))) {
+    return false
+  }
   busy.value = true
   try {
     const festivalName = name.trim()
@@ -120,12 +196,19 @@ async function runImport(source: { kind: 'file'; file: File } | { kind: 'sheet';
           ? await importSheetUrl(source.url, festivalName, deviceId)
           : await importExample(deviceId)
 
+    if (!setAndSaveDb(result.db)) {
+      return false
+    }
     resetSyncState()
-    setAndSaveDb(result.db)
     activeServiceId.value = result.db.schema.services[0]?.id ?? null
     lastResult.value = null
     scanLog.value = []
-    notify('success', `${result.importedRows} guests imported`, `${result.db.schema.services.length} scan modes detected`)
+    const warning = result.mapping.warnings[0]
+    if (warning) {
+      notify('warning', `${result.importedRows} guests imported`, `${warning} Check the Event tab.`)
+    } else {
+      notify('success', `${result.importedRows} guests imported`, `${result.db.schema.services.length} scan modes detected`)
+    }
     return true
   } catch (error) {
     notify('error', 'Import failed', error instanceof Error ? error.message : undefined)
@@ -142,7 +225,9 @@ function handleScan(payload: string) {
     current && service
       ? (() => {
           const next = applyScan(current, service.id, payload, deviceId)
-          setAndSaveDb(next.db)
+          if (next.db !== current && !setAndSaveDb(next.db)) {
+            return { status: 'error' as const, title: 'Scan not saved', detail: 'Phone storage is full. Nothing was recorded.', payload }
+          }
           if (next.result.event) {
             sync.broadcastScanEvent(next.result.event)
           }
@@ -162,10 +247,33 @@ function handleScan(payload: string) {
     ...scanLog.value,
   ].slice(0, 50)
   void scanFeedback(result.status)
-  if (result.status === 'accepted') {
-    void maybeRequestReview(db.value?.events.length ?? 0)
-  }
   return result
+}
+
+// Reverts a scan made on this phone (wrong mode, wrong guest). Syncs to other phones like a scan.
+function undoLastScan(eventId: string) {
+  const current = db.value
+  const next = current ? undoScan(current, eventId, deviceId) : null
+  if (!next || !setAndSaveDb(next)) {
+    return false
+  }
+  const undo = next.events.find((event) => event.undoOf === eventId)
+  if (undo) {
+    sync.broadcastScanEvent(undo)
+  }
+  scanLog.value = scanLog.value.map((entry) =>
+    entry.event?.id === eventId ? { ...entry, status: 'error', title: 'Undone', event: undefined } : entry,
+  )
+  if (lastResult.value?.event?.id === eventId) {
+    lastResult.value = null
+  }
+  notify('info', 'Scan undone', 'The ticket can be scanned again.')
+  return true
+}
+
+// Only after the camera closes, never on top of a scan.
+function askForReview() {
+  void maybeRequestReview(db.value?.events.length ?? 0)
 }
 
 function guestName(values: Record<string, string>, schema: SchemaMapping) {
@@ -194,6 +302,9 @@ async function hostSync() {
 async function joinFromText(value: string) {
   try {
     const invite = decodeInvite(value)
+    if (db.value && db.value.id !== invite.festivalId && !(await confirmReplaceList(`Join ${invite.festivalName}?`))) {
+      return false
+    }
     syncInvite.value = invite
     syncInviteText.value = encodeInvite(invite)
     syncQr.value = null
@@ -234,9 +345,18 @@ function resetDb() {
   scanLog.value = []
 }
 
+// Staff phones get the list from the host, which would overwrite local edits: edit on the host.
+function editableHere() {
+  if (sync.currentSession?.role === 'peer') {
+    notify('info', 'Edit on the host phone', 'This phone follows the guest list of the host.')
+    return false
+  }
+  return true
+}
+
 function updateSchema(patch: (schema: SchemaMapping) => Partial<SchemaMapping>) {
   const current = db.value
-  if (!current) {
+  if (!current || !editableHere()) {
     return
   }
   const schema = { ...current.schema, ...patch(current.schema), source: 'manual' as const, confidence: 1 }
@@ -246,7 +366,7 @@ function updateSchema(patch: (schema: SchemaMapping) => Partial<SchemaMapping>) 
 
 function renameFestival(name: string) {
   const current = db.value
-  if (!current || !name.trim() || name.trim() === current.name) {
+  if (!current || !name.trim() || name.trim() === current.name || !editableHere()) {
     return
   }
   setAndSaveDb({ ...current, name: name.trim(), updatedAt: new Date().toISOString() })
@@ -327,6 +447,8 @@ export function useFestival() {
     syncQr,
     runImport,
     handleScan,
+    undoLastScan,
+    askForReview,
     hostSync,
     joinFromText,
     stopSync,

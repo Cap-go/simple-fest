@@ -148,20 +148,22 @@ export class SyncController {
     this.socket = socket
     socket.onopen = () => {
       this.attempts = 0
+      const hasList = this.handlers.getDatabase()?.id === invite.festivalId
       this.setStatus({
         mode: role === 'host' ? 'hosting' : 'connected',
         peers: this.status.peers,
-        message: role === 'host' ? 'Hosting device sync' : 'Connected to host',
+        message: role === 'host' ? 'Hosting device sync' : hasList ? 'Connected to host' : 'Connected. Waiting for the guest list',
       })
       this.send({ kind: 'hello', secret: invite.secret, deviceId: deviceId ?? 'host' })
       if (role === 'host') {
+        // Peers answer a snapshot with the scans the host is missing.
         this.broadcastSnapshot()
         return
       }
       this.send({ kind: 'request-snapshot', secret: invite.secret })
-      // Replay scans made while disconnected; receivers ignore events they already have.
-      for (const event of this.handlers.getDatabase()?.events ?? []) {
-        this.broadcastScanEvent(event)
+      // Replay scans made while disconnected, but only those of this festival; receivers ignore events they already have.
+      if (hasList) {
+        this.replayEvents()
       }
     }
     socket.onmessage = (event) => {
@@ -215,12 +217,34 @@ export class SyncController {
     }
 
     if (message.kind === 'snapshot') {
+      if (message.db.id !== this.session.invite.festivalId) {
+        return
+      }
       this.handlers.onSnapshot(message.db)
+      if (this.session.role === 'peer') {
+        if (this.status.mode === 'connected') {
+          this.setStatus({ ...this.status, message: 'Connected to host' })
+        }
+        // Send back what the host did not have, e.g. scans made while the host was offline.
+        this.replayEvents(new Set(message.db.events.map((event) => event.id)))
+      }
       return
     }
 
     if (message.kind === 'scan-event') {
       this.handlers.onScanEvent(message.event)
+    }
+  }
+
+  private replayEvents(known = new Set<string>()) {
+    const db = this.handlers.getDatabase()
+    if (!db || !this.session || db.id !== this.session.invite.festivalId) {
+      return
+    }
+    for (const event of db.events) {
+      if (!known.has(event.id)) {
+        this.broadcastScanEvent(event)
+      }
     }
   }
 

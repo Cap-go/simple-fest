@@ -81,8 +81,10 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
           return
         }
 
+        // A code held in front of the camera keeps refreshing the window, so it counts once until it leaves the frame.
         const now = Date.now()
         if (lastScan.value === value && now - lastScan.time < duplicateWindowMs) {
+          lastScan.time = now
           return
         }
 
