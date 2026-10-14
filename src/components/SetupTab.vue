@@ -210,7 +210,7 @@ async function confirmRemoveMode(id: string, label: string) {
       <p>Made by <a href="https://x.com/martindonadieu" target="_blank" rel="noopener">Martin Donadieu</a></p>
       <p class="small">Built with Capacitor and shipped with Capgo live updates.</p>
       <a class="capgo" href="https://capgo.app/?ref=simple-fest" target="_blank" rel="noopener">
-        <img src="/capgo.svg" alt="" width="28" height="28" />Made with Capgo
+        <img src="/capgo.svg" alt="" width="28" height="28" />Made by Capgo
       </a>
     </footer>
   </div>
