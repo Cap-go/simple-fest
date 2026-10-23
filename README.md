@@ -2,7 +2,7 @@
 
 Local-first festival scanner for entrance, day pass, food, drink, and custom scan modes.
 
-Free and open source under the [MIT license](LICENSE). Source code: [Cap-go/simple-festival](https://github.com/Cap-go/simple-festival).
+Free and open source under the [MIT license](LICENSE). Source code: [Cap-go/simple-fest](https://github.com/Cap-go/simple-fest).
 
 The app imports a festival database from CSV, XLSX, or a public Google Sheet CSV export, infers the scanner schema, and stores scan state locally on each device. Optional device sync lets another device join by scanning an invite QR when network is available.
 
