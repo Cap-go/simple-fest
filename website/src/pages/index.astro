@@ -10,13 +10,13 @@ const steps = [
   ['Add more phones', 'Show a QR on the first phone, scan it on the next. Scans sync when the network is back.', '/screens/05-device-sync.jpg', 'Device sync invite QR'],
 ]
 ---
-<Base title="Simple Fest - free ticket scanner for small events" description="Turn your guest list into a QR ticket scanner. Free, offline, no account. Built for small festivals, parties and community events.">
+<Base title="Simple Fest - free, open-source ticket scanner for small events" description="Turn your guest list into a QR ticket scanner. Free and open source, works offline, no account. Built for small festivals, parties and community events.">
   <main>
     <section class="wrap hero">
       <div class="copy">
         <h1>Check guests in from a spreadsheet.</h1>
         <p class="lead">
-          Simple Fest turns the list of who paid into a ticket scanner for the gate, the bar and the food stand. Free, offline, no account.
+          Simple Fest turns the list of who paid into a ticket scanner for the gate, the bar and the food stand. Free and open source. Works offline, no account.
         </p>
         <div class="stores">
           <a class="pill" href={appStore} rel="noopener">
@@ -33,6 +33,7 @@ const steps = [
           <li>Works without internet</li>
           <li>Your list stays on your phones</li>
         </ul>
+        <p class="source"><a href="https://github.com/Cap-go/simple-festival">View the source on GitHub</a></p>
       </div>
       <div class="phone">
         <video src="/video/demo.mp4" poster="/video/poster.jpg" autoplay muted loop playsinline aria-label="Simple Fest demo: scanning guests at the entrance"></video>
@@ -180,6 +181,11 @@ const steps = [
     padding: 10px;
     border-radius: 48px;
     background: #111111;
+  }
+
+  .source {
+    margin: 18px 0 0;
+    font-weight: 600;
   }
 
   .phone video {
