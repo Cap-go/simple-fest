@@ -194,7 +194,11 @@ jobs:
             -a "$CAPGO_TOKEN"
           )
           if [[ -n "${PLAY_CONFIG_JSON:-}" ]]; then
-            ARGS+=(--play-config-json "$PLAY_CONFIG_JSON")
+            ARGS+=(
+              --play-config-json "$PLAY_CONFIG_JSON"
+              --android-track production
+              --android-release-status completed
+            )
           else
             ARGS+=(--no-playstore-upload)
           fi
