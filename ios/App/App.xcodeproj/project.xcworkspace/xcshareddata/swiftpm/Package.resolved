@@ -1,31 +1,13 @@
 {
-  "originHash" : "fd1c1146ee38f779bd04f778cd645c04e896a7bcf8aa4af85fe56e8adc44afd4",
+  "originHash" : "b80b982651d78d131190f8c6a091a98be8c92a2ac46aa8d07d96f4d17b765875",
   "pins" : [
-    {
-      "identity" : "alamofire",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Alamofire/Alamofire.git",
-      "state" : {
-        "revision" : "7595cbcf59809f9977c5f6378500de2ad73b7ddb",
-        "version" : "5.12.0"
-      }
-    },
-    {
-      "identity" : "bigint",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/attaswift/BigInt.git",
-      "state" : {
-        "revision" : "e07e00fa1fd435143a2dcf8b7eec9a7710b2fdfe",
-        "version" : "5.7.0"
-      }
-    },
     {
       "identity" : "capacitor-swift-pm",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ionic-team/capacitor-swift-pm.git",
       "state" : {
-        "revision" : "2231987d85b8b0b289320b1d0947b4ae8345cde4",
-        "version" : "8.4.1"
+        "revision" : "4c7f346d16196e21fbe23d4a7a6fc7af62af6742",
+        "version" : "8.5.3"
       }
     },
     {
@@ -33,35 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ionic-team/ion-ios-filesystem.git",
       "state" : {
-        "revision" : "13848aab4f3447ff98dfdbe72ff8ef31bf333db0",
-        "version" : "2.0.0"
-      }
-    },
-    {
-      "identity" : "swiftkeychainwrapper",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/jrendel/SwiftKeychainWrapper.git",
-      "state" : {
-        "revision" : "185a3165346a03767101c4f62e9a545a0fe0530f",
-        "version" : "4.0.1"
-      }
-    },
-    {
-      "identity" : "version",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mrackwitz/Version.git",
-      "state" : {
-        "revision" : "fd4b0eb5756aa7f1c33977fb626cf37d2140a3a0",
-        "version" : "0.8.0"
-      }
-    },
-    {
-      "identity" : "zipfoundation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/weichsel/ZIPFoundation.git",
-      "state" : {
-        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
-        "version" : "0.9.20"
+        "revision" : "549c18ad9d9bb70d05df37cc3f6f7aa7f5d0ee52",
+        "version" : "2.0.1"
       }
     }
   ],

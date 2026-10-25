@@ -6,6 +6,8 @@ import { chromium } from 'playwright'
 
 const source = 'store/screenshots'
 const output = 'store/listing'
+const only = process.env.ONLY?.split(',')
+const onlyScenes = process.env.ONLY_SCENES?.split(',')
 
 const captions: Record<string, [string, string]> = {
   '04-camera-scan': ['Scan QR tickets\nat the door', 'Fast check-in for festivals and events'],
@@ -18,8 +20,10 @@ const captions: Record<string, [string, string]> = {
 const browser = await chromium.launch({ headless: true })
 try {
   for (const target of await readdir(source)) {
+    if (only && !only.includes(target)) continue
     await mkdir(`${output}/${target}`, { recursive: true })
     for (const scene of Object.keys(captions)) {
+      if (onlyScenes && !onlyScenes.includes(scene)) continue
       const file = Bun.file(`${source}/${target}/${scene}.png`)
       if (!(await file.exists())) continue
       const bytes = Buffer.from(await file.arrayBuffer())

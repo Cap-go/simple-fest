@@ -26,6 +26,21 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
   const listeners = ref<ListenerHandle[]>([])
   let lastScan = { value: '', time: 0 }
   let task = Promise.resolve()
+  let resizeObserver: ResizeObserver | undefined
+  let resizeFrame: number | undefined
+
+  function resizePreview() {
+    if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame)
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = undefined
+      void enqueue(async () => {
+        if (!active.value || !enabled.value || document.hidden) return
+        await CameraPreview.setPreviewSize(previewBounds(previewSelector))
+      }).catch((resizeError: unknown) => {
+        error.value = resizeError instanceof Error ? resizeError.message : 'Camera resize failed'
+      })
+    })
+  }
 
   function enqueue(nextTask: () => Promise<void>) {
     const next = task.catch(() => undefined).then(nextTask)
@@ -41,6 +56,11 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
 
   async function stop() {
     await enqueue(async () => {
+      resizeObserver?.disconnect()
+      resizeObserver = undefined
+      window.removeEventListener('resize', resizePreview)
+      if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame)
+      resizeFrame = undefined
       await CameraPreview.stopBarcodeScanner().catch(() => undefined)
       await CameraPreview.stop().catch(() => undefined)
       await removeListeners()
@@ -114,6 +134,13 @@ export function useCapgoQrScanner(enabled: ScannerSource, onScan: (value: string
         cameraTimeoutMs,
       )
       active.value = true
+      const viewport = document.querySelector(previewSelector)
+      if (viewport) {
+        resizeObserver = new ResizeObserver(resizePreview)
+        resizeObserver.observe(viewport)
+      }
+      window.addEventListener('resize', resizePreview)
+      resizePreview()
     }).catch((scanError: unknown) => {
       error.value = scanError instanceof Error ? scanError.message : 'Camera scanner failed'
       active.value = false

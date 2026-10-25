@@ -82,6 +82,36 @@ Store assets:
 
 iPhone Duo screenshots are optional today and required for submissions starting April 2027.
 
+### Native iPhone Duo Captures — October 25, 2026
+
+The Duo upload plan uses six native iOS simulator captures, including the actual native navigation bars:
+
+- `iphone-duo-outer-portrait/{01-import,02-dynamic-home,03-scan-result}.png` at 1398x2034.
+- `iphone-duo-inner-landscape/{01-import,02-dynamic-home,03-scan-result}.png` at 2853x2007.
+
+Raw captures live under `store/screenshots`; their opaque, captioned listing versions live under `store/listing`. Other Duo images remain browser-layout previews, not native verification evidence. Running the browser screenshot generator for these targets overwrites the native captures.
+
+Reframe only the native captures:
+
+```sh
+ONLY=iphone-duo-outer-portrait,iphone-duo-inner-landscape ONLY_SCENES=01-import,02-dynamic-home,03-scan-result bun scripts/caption-store-screenshots.ts
+```
+
+With the existing App Store Connect environment configured, preview or upload only the Duo group without replacing other store assets:
+
+```sh
+ONLY_GROUPS=IPHONE_DUO_PROFILE DRY_RUN=1 bun scripts/asc/upload-store-assets.ts
+ONLY_GROUPS=IPHONE_DUO_PROFILE bun scripts/asc/upload-store-assets.ts
+```
+
+Version 1.0.2 was `WAITING_FOR_REVIEW` during this capture session. All six images were uploaded and verified in the App Store Connect asset library, but existing listing placements and the review submission were left unchanged. Stage assets while a version is locked with:
+
+```sh
+ONLY_GROUPS=IPHONE_DUO_PROFILE LIBRARY_ONLY=1 bun scripts/asc/upload-store-assets.ts
+```
+
+Verification covers native panel switching, sample data, accepted scans and import dialogs, plus browser checks at all four Duo viewport sizes and unit tests for native camera resizing. The simulator's rotation/hinge readback is unreliable, so captures are classified by their measured dimensions rather than the requested pose. Real-camera QR recognition still requires a physical device check. Capgo's release-type check recommends a native build; screenshot upload does not publish the app or submit a release for review.
+
 App Store creative assets (App Store Connect, October 2026; shown on iOS 27 and later):
 
 - Product page header 21:9: `store/creative/product-page-header-21x9.png` (3840x1646)

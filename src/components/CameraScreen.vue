@@ -96,11 +96,13 @@ function close() {
   emit('close')
 }
 
-function submitManual() {
+function submitManual(event: Event) {
+  const form = event.currentTarget as HTMLFormElement
   const code = manualCode.value.trim()
   if (code) {
     void onScanned(code)
     manualCode.value = ''
+    form.querySelector('input')?.blur()
   }
 }
 
@@ -237,7 +239,7 @@ function selectMode(id: string) {
 .modes {
   display: flex;
   gap: 8px;
-  padding: 4px 16px 8px;
+  padding: 4px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
   overflow-x: auto;
   scrollbar-width: none;
 }

@@ -28,11 +28,13 @@ function selectMode(id: string) {
   void tapFeedback()
 }
 
-function submitManual() {
+function submitManual(event: Event) {
+  const form = event.currentTarget as HTMLFormElement
   const code = manualCode.value.trim()
   if (code) {
     handleScan(code)
     manualCode.value = ''
+    form.querySelector('input')?.blur()
   }
 }
 </script>
