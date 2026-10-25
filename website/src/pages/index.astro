@@ -19,11 +19,11 @@ const steps = [
           Simple Fest turns the list of who paid into a ticket scanner for the gate, the bar and the food stand. Free and open source. Works offline, no account.
         </p>
         <div class="stores">
-          <a class="pill" href={testFlight} rel="noopener">
+          <a class="pill" href={testFlight} rel="noopener" data-fast-goal="testflight">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.2 10.7 21.2 3.4c.6-.2 1.2.4.9 1L15.6 21c-.2.6-1.1.7-1.4.1l-2.9-5.5-5.5-2.9c-.6-.3-.5-1.2.1-1.4l-3.7-.6zm7.4 1.7 2.2 4.1 3.8-10.2-10.2 3.8 4.2 2.3z"/></svg>
             <span><small>Try the iOS beta</small>TestFlight</span>
           </a>
-          <a class="pill" href={googlePlay} rel="noopener">
+          <a class="pill" href={googlePlay} rel="noopener" data-fast-goal="google_play">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7L3.6 2.3zm10.8 10.8 2.8 2.8-11.9 6.8c-.4.2-.8.3-1.1.2l10.2-9.8zm4.1-4.1 3 1.7c.9.5.9 1.4 0 1.9l-3 1.7-3-3 3-2.3zM5.3 1.9l11.9 6.8-2.8 2.8L4.2 1.7c.3-.1.7 0 1.1.2z"/></svg>
             <span><small>Get it on</small>Google Play</span>
           </a>
@@ -118,6 +118,7 @@ const steps = [
     download.href = canvas.toDataURL('image/png')
     download.download = `ticket-${value.replace(/[^a-z0-9]+/g, '-')}.png`
     out.hidden = false
+    ;(window as Window & { datafast?: (name: string) => void }).datafast?.('ticket')
   })
 </script>
 

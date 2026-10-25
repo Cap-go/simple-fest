@@ -1,5 +1,7 @@
 ---
 const { title, description } = Astro.props as { title: string; description: string }
+const datafastQueue =
+  'window.datafast=window.datafast||function(){window.datafast.q=window.datafast.q||[];window.datafast.q.push(arguments);};'
 ---
 <!doctype html>
 <html lang="en">
@@ -16,6 +18,20 @@ const { title, description } = Astro.props as { title: string; description: stri
     <meta property="og:image" content="https://simplefest.app/icon.png" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {
+      import.meta.env.PROD && (
+        <>
+          <script is:inline id="datafast-queue" set:html={datafastQueue}></script>
+          <script
+            is:inline
+            defer
+            data-website-id="dfid_SOxfeZxKQPOvpRGoWC6YI"
+            data-domain="simplefest.app"
+            src="https://datafa.st/js/script.js"
+          ></script>
+        </>
+      )
+    }
   </head>
   <body>
     <header class="bar">
