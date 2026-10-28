@@ -19,15 +19,17 @@ const targets: Target[] = [
   { name: 'ios-6.9', directory: 'store/screenshots/ios-6.9', width: 440, height: 956, deviceScaleFactor: 3, ios: true },
   { name: 'ios-6.7', directory: 'store/screenshots/ios-6.7', width: 430, height: 932, deviceScaleFactor: 3, ios: true },
   { name: 'ios-6.5', directory: 'store/screenshots/ios-6.5', width: 428, height: 926, deviceScaleFactor: 3, ios: true },
-  { name: 'ios-5.5', directory: 'store/screenshots/ios-5.5', width: 414, height: 736, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-outer-portrait', directory: 'store/screenshots/iphone-duo-outer-portrait', width: 466, height: 678, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-outer-landscape', directory: 'store/screenshots/iphone-duo-outer-landscape', width: 678, height: 466, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-inner-portrait', directory: 'store/screenshots/iphone-duo-inner-portrait', width: 669, height: 951, deviceScaleFactor: 3, ios: true },
   { name: 'iphone-duo-inner-landscape', directory: 'store/screenshots/iphone-duo-inner-landscape', width: 951, height: 669, deviceScaleFactor: 3, ios: true },
   { name: 'ipad-13', directory: 'store/screenshots/ipad-13', width: 1032, height: 1376, deviceScaleFactor: 2, ios: true },
-  { name: 'android-phone', directory: 'store/screenshots/android-phone', width: 360, height: 640, deviceScaleFactor: 3, ios: false },
+  { name: 'android-phone', directory: 'store/screenshots/android-phone', width: 360, height: 720, deviceScaleFactor: 3, ios: false },
 ]
 const only = process.env.ONLY?.split(',')
+// Scenes with native bars (01, 02, 03, 05) are captured from the simulator/emulator (see store/listing.md),
+// so this browser render only makes the full-screen camera scene unless ONLY_SCENES asks for more.
+const onlyScenes = process.env.ONLY_SCENES?.split(',') ?? ['04-camera-scan']
 
 const columns = [
   'Ticket ID',
@@ -221,6 +223,7 @@ async function main() {
       const page = await context.newPage()
 
       for (const scene of scenes) {
+        if (!onlyScenes.includes(scene.fileName.replace('.png', ''))) continue
         await page.goto(origin, { waitUntil: 'networkidle' })
         await scene.prepare(page)
         await page.screenshot({

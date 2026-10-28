@@ -13,7 +13,7 @@ guest list, event, festival, CSV, Excel, Google Sheets, offline.
 - Website: https://simplefest.app/
 - Privacy policy: https://simplefest.app/privacy/
 - Graphics: `store/assets/play-store-icon.png` (512), `store/assets/play-store-feature-graphic.png` (1024x500,
-  `scripts/generate-play-feature-graphic.ts`), phone screenshots `store/listing/android-phone/` (1080x1920),
+  `scripts/generate-play-feature-graphic.ts`), phone screenshots `store/listing/android-phone/` (1080x2160),
   tablet screenshots `store/listing/ipad-13/`
 - Screenshot order: 04-camera-scan, 03-scan-result, 01-import, 02-dynamic-home, 05-device-sync
 

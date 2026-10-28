@@ -25,8 +25,10 @@ const plan: Placement[] = ([
     type: 'APP_SCREENSHOT',
     group: 'IPHONE_DUO_PROFILE',
     files: [
-      ...['03-scan-result', '02-dynamic-home', '01-import'].map((s) => `${shots}/iphone-duo-inner-landscape/${s}.png`),
-      ...['02-dynamic-home', '03-scan-result', '01-import'].map((s) => `${shots}/iphone-duo-outer-portrait/${s}.png`),
+      ...['03-scan-result', '02-dynamic-home', '05-device-sync', '01-import'].map((s) => `${shots}/iphone-duo-inner-landscape/${s}.png`),
+      `${shots}/iphone-duo-inner-portrait/03-scan-result.png`,
+      // The outer import sheet sits under the Duo status column, so the outer display skips it.
+      ...['03-scan-result', '02-dynamic-home', '05-device-sync'].map((s) => `${shots}/iphone-duo-outer-portrait/${s}.png`),
     ],
   },
   { type: 'APP_SCREENSHOT', group: 'IPAD_13_PROFILE', files: scenes.map((s) => `${shots}/ipad-13/${s}.png`) },

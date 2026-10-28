@@ -215,6 +215,7 @@ function submitManual(event: Event) {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.12s;
+  container-type: size;
 }
 
 .hero:active {
@@ -289,6 +290,38 @@ function submitManual(event: Event) {
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
   font-weight: 700;
+}
+
+/* Short hero (scan result showing on a small phone): the ring would run into the button, so drop it. */
+@container (max-height: 300px) {
+  .ring {
+    display: none;
+  }
+
+  .hero-center {
+    translate: none;
+  }
+
+  .cta {
+    position: static;
+  }
+}
+
+/* iOS 15 and older WebViews lack size container queries: fall back to short viewports. */
+@supports not (container-type: size) {
+  @media (max-height: 760px) {
+    .ring {
+      display: none;
+    }
+
+    .hero-center {
+      translate: none;
+    }
+
+    .cta {
+      position: static;
+    }
+  }
 }
 
 .side {
