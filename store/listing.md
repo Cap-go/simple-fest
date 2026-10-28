@@ -126,11 +126,15 @@ DRY_RUN=1 bun scripts/asc/upload-store-assets.ts
 bun scripts/asc/upload-store-assets.ts
 ```
 
-While a version is locked in review, stage the images in the asset library without changing the submission:
+App Store Connect refuses placement changes once a version reaches `READY_FOR_REVIEW`, even before it is submitted.
+In that case, stage the images in the asset library without changing the submission:
 
 ```sh
 LIBRARY_ONLY=1 bun scripts/asc/upload-store-assets.ts
 ```
+
+On October 28, 2026, all 25 images were staged this way. Version 1.0.2 was `READY_FOR_REVIEW`, so its placements still
+show the previous screenshots.
 
 App Store creative assets (App Store Connect, October 2026; shown on iOS 27 and later):
 
