@@ -74,43 +74,63 @@ Store assets:
 - iOS 6.9 inch screenshots: `store/screenshots/ios-6.9/*.png` (1320x2868, required iPhone size)
 - iOS 6.7 inch screenshots: `store/screenshots/ios-6.7/*.png` (1290x2796, also accepted for 6.9 inch)
 - iOS 6.5 inch screenshots: `store/screenshots/ios-6.5/*.png` (1284x2778)
-- iOS 5.5 inch screenshots: `store/screenshots/ios-5.5/*.png` (1242x2208)
-- Android phone screenshots: `store/screenshots/android-phone/*.png` (1080x1920)
+- Android phone screenshots: `store/screenshots/android-phone/*.png` (1080x2160)
 - iPhone Duo outer display: `store/screenshots/iphone-duo-outer-portrait/*.png` (1398x2034) and `iphone-duo-outer-landscape` (2034x1398)
 - iPhone Duo inner display: `store/screenshots/iphone-duo-inner-portrait/*.png` (2007x2853) and `iphone-duo-inner-landscape` (2853x2007)
-- Regenerate screenshots: `bun run store:screenshots` (set `SYNC_BACKEND_URL` to a running sync worker for the hosting scene)
+- Regenerate the camera scene: `bun run store:screenshots` (browser render of `04-camera-scan`; the other scenes are native captures, see below)
 
 iPhone Duo screenshots are optional today and required for submissions starting April 2027.
 
-### Native iPhone Duo Captures — October 25, 2026
+### Native Captures — October 28, 2026
 
-The Duo upload plan uses six native iOS simulator captures, including the actual native navigation bars:
+Scenes with app chrome (`01-import`, `02-dynamic-home`, `03-scan-result`, `05-device-sync`) are native captures, so
+they show the real native navigation bar and tab bar (iOS 27 floating tab bar, the iPhone Duo side tab bar, the
+iPadOS top tab bar and the Android Material bars). `04-camera-scan` hides the native bars and stays a browser render.
 
-- `iphone-duo-outer-portrait/{01-import,02-dynamic-home,03-scan-result}.png` at 1398x2034.
-- `iphone-duo-inner-landscape/{01-import,02-dynamic-home,03-scan-result}.png` at 2853x2007.
+| Target | Device | Runtime |
+| --- | --- | --- |
+| `ios-6.9` | iPhone 17 Pro Max simulator | iOS 27.0 |
+| `ios-6.7` | iPhone 16 Plus simulator | iOS 27.0 |
+| `ios-6.5` | iPhone 14 Plus simulator | iOS 27.0 |
+| `ipad-13` | iPad Pro 13-inch (M5) simulator | iOS 27.0 |
+| `iphone-duo-*` | iPhone Duo simulator, outer (closed) and inner (open) display | iOS 27.1 |
+| `android-phone` | Pixel emulator, `adb shell wm size 1080x2160` and `wm density 480` | Android 16 |
 
-Raw captures live under `store/screenshots`; their opaque, captioned listing versions live under `store/listing`. Other Duo images remain browser-layout previews, not native verification evidence. Running the browser screenshot generator for these targets overwrites the native captures.
+How to recapture:
 
-Reframe only the native captures:
+1. Seed the demo event in a throwaway build: import a module from `src/main.ts`, before `App.vue`, that writes the
+   `demoDb` from `scripts/generate-store-screenshots.ts` to `simple-festival.db.v1` once. Set
+   `CapacitorUpdater.autoUpdate` to `false` so a live bundle cannot replace it. Do not commit either change.
+2. Build for the simulator (`xcodebuild -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO`) and the emulator
+   (`./gradlew assembleDebug`), then install them.
+3. Drive the app with `bunx agent-device` and capture with
+   `agent-device screenshot <file> --pixel-density 3 --normalize-status-bar` (density 2 on iPad):
+   - `02-dynamic-home`: the Scan tab right after launch.
+   - `03-scan-result`: type `TCK-1001` and press enter, then relaunch the app so the result shows without the
+     keyboard or the iOS "Suggested" autofill chip. Use "Undo last scan" afterwards.
+   - `01-import`: Event tab, "Import a new guest list". On iPad, use onboarding's "Import guest list" from a build without the seed.
+   - `05-device-sync`: Devices tab, "Host Summer Fest 2026".
+4. iPhone Duo: `agent-device fold closed|open` picks the display and `agent-device orientation` rotates it. The inner
+   display's natural orientation is landscape, so inner portrait needs `orientation landscape-left`. Check each
+   capture's pixel size, not the requested pose.
+5. Run `bun run store:screenshots`, then `bun scripts/caption-store-screenshots.ts`.
+
+Known capture limits: the outer Duo landscape layout clips its right edge, and the outer import sheet runs under the
+Duo status column. Neither group is uploaded. In the iPad simulator, the native top tab bar does not respond to taps,
+so open the Devices tab with the navbar sync button.
+
+With the App Store Connect environment configured, preview and upload the screenshot groups:
 
 ```sh
-ONLY=iphone-duo-outer-portrait,iphone-duo-inner-landscape ONLY_SCENES=01-import,02-dynamic-home,03-scan-result bun scripts/caption-store-screenshots.ts
+DRY_RUN=1 bun scripts/asc/upload-store-assets.ts
+bun scripts/asc/upload-store-assets.ts
 ```
 
-With the existing App Store Connect environment configured, preview or upload only the Duo group without replacing other store assets:
+While a version is locked in review, stage the images in the asset library without changing the submission:
 
 ```sh
-ONLY_GROUPS=IPHONE_DUO_PROFILE DRY_RUN=1 bun scripts/asc/upload-store-assets.ts
-ONLY_GROUPS=IPHONE_DUO_PROFILE bun scripts/asc/upload-store-assets.ts
+LIBRARY_ONLY=1 bun scripts/asc/upload-store-assets.ts
 ```
-
-Version 1.0.2 was `WAITING_FOR_REVIEW` during this capture session. All six images were uploaded and verified in the App Store Connect asset library, but existing listing placements and the review submission were left unchanged. Stage assets while a version is locked with:
-
-```sh
-ONLY_GROUPS=IPHONE_DUO_PROFILE LIBRARY_ONLY=1 bun scripts/asc/upload-store-assets.ts
-```
-
-Verification covers native panel switching, sample data, accepted scans and import dialogs, plus browser checks at all four Duo viewport sizes and unit tests for native camera resizing. The simulator's rotation/hinge readback is unreliable, so captures are classified by their measured dimensions rather than the requested pose. Real-camera QR recognition still requires a physical device check. Capgo's release-type check recommends a native build; screenshot upload does not publish the app or submit a release for review.
 
 App Store creative assets (App Store Connect, October 2026; shown on iOS 27 and later):
 
