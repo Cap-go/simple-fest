@@ -101,14 +101,17 @@ How to recapture:
 1. Seed the demo event in a throwaway build: import a module from `src/main.ts`, before `App.vue`, that writes the
    `demoDb` from `scripts/generate-store-screenshots.ts` to `simple-festival.db.v1` once. Set
    `CapacitorUpdater.autoUpdate` to `false` so a live bundle cannot replace it. Do not commit either change.
-2. Build for the simulator (`xcodebuild -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO`) and the emulator
-   (`./gradlew assembleDebug`), then install them.
+2. Run `bun run build` and `bun run cap:sync` to copy the seeded web bundle into the native projects, then build for
+   the simulator (`xcodebuild -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO`) and the emulator
+   (`./gradlew assembleDebug`) and install them.
 3. Drive the app with `bunx agent-device` and capture with
-   `agent-device screenshot <file> --pixel-density 3 --normalize-status-bar` (density 2 on iPad):
+   `agent-device screenshot <file> --pixel-density 3 --normalize-status-bar` on iOS (density 2 on iPad) and
+   `agent-device screenshot <file> --normalize-status-bar` on Android:
    - `02-dynamic-home`: the Scan tab right after launch.
    - `03-scan-result`: type `TCK-1001` and press enter, then relaunch the app so the result shows without the
      keyboard or the iOS "Suggested" autofill chip. Use "Undo last scan" afterwards.
-   - `01-import`: Event tab, "Import a new guest list". On iPad, use onboarding's "Import guest list" from a build without the seed.
+   - `01-import`: Event tab, "Import a new guest list". On iPad, uninstall the seeded app, install a build without the seed, and use
+     onboarding's "Import guest list".
    - `05-device-sync`: Devices tab, "Host Summer Fest 2026".
 4. iPhone Duo: `agent-device fold closed|open` picks the display and `agent-device orientation` rotates it. The inner
    display's natural orientation is landscape, so inner portrait needs `orientation landscape-left`. Check each

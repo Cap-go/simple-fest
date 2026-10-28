@@ -307,6 +307,23 @@ function submitManual(event: Event) {
   }
 }
 
+/* iOS 15 and older WebViews lack size container queries: fall back to short viewports. */
+@supports not (container-type: size) {
+  @media (max-height: 760px) {
+    .ring {
+      display: none;
+    }
+
+    .hero-center {
+      translate: none;
+    }
+
+    .cta {
+      position: static;
+    }
+  }
+}
+
 .side {
   flex: none;
   display: grid;
